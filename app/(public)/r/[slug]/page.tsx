@@ -7,6 +7,8 @@ import { eq } from "drizzle-orm";
 import { Rosette, RosetteRow } from "@/components/ui/rosette";
 import { db } from "@/lib/db";
 import { restaurantProfiles } from "@/db/schema";
+import { getCurrentUser, type CurrentUser } from "@/lib/auth";
+import { logoutAction } from "@/lib/auth-actions";
 
 /*
  * Public restaurant profile — /r/[slug]
@@ -48,7 +50,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function RestaurantProfilePage({ params }: PageProps) {
   const { slug } = await params;
-  const r = await getRestaurant(slug);
+  const [r, user] = await Promise.all([getRestaurant(slug), getCurrentUser()]);
   if (!r) notFound();
 
   const tier = r.stars as 1 | 2 | 3;
@@ -56,7 +58,7 @@ export default async function RestaurantProfilePage({ params }: PageProps) {
 
   return (
     <main className="min-h-screen bg-vellum text-oak-gall">
-      {/* Minimal chrome — wordmark + back link */}
+      {/* Minimal chrome — wordmark + auth nav */}
       <header className="border-b border-sepia/30">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-8 py-5">
           <Link
@@ -65,12 +67,7 @@ export default async function RestaurantProfilePage({ params }: PageProps) {
           >
             Stagiaire
           </Link>
-          <Link
-            href="/"
-            className="font-sans text-[11px] uppercase tracking-[0.18em] text-sepia transition-colors duration-[120ms] ease-paper hover:text-oak-gall"
-          >
-            ← All restaurants
-          </Link>
+          <PublicNav user={user} />
         </div>
       </header>
 
@@ -186,26 +183,9 @@ export default async function RestaurantProfilePage({ params }: PageProps) {
           />
         </section>
 
-        {/* Marquee CTA — auth-walled, currently shows the logged-out state */}
+        {/* Marquee CTA — auth-aware */}
         <section className="mb-16">
-          <div className="flex flex-col gap-4">
-            <button
-              type="button"
-              disabled
-              className="group relative flex h-14 w-full items-center justify-center gap-3 bg-sepia px-6 font-display text-xl italic text-vellum opacity-90"
-              title="Sign in to request a stage (auth flow not yet built)"
-            >
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-1 border border-gold-leaf/30"
-              />
-              <span>Sign in to request a stage</span>
-            </button>
-            <p className="font-sans text-[11px] uppercase tracking-[0.18em] text-sepia">
-              Auth flows land in a later checkpoint. Once signed in, this becomes a Cordon-Bleu
-              CTA opening the date picker.
-            </p>
-          </div>
+          <RequestCta user={user} restaurantSlug={r.slug} />
         </section>
 
         {/* Footer */}
@@ -222,6 +202,101 @@ export default async function RestaurantProfilePage({ params }: PageProps) {
         </footer>
       </article>
     </main>
+  );
+}
+
+function PublicNav({ user }: { user: CurrentUser | null }) {
+  if (!user) {
+    return (
+      <div className="flex items-center gap-5">
+        <Link
+          href="/login"
+          className="font-sans text-[11px] uppercase tracking-[0.18em] text-sepia transition-colors duration-[120ms] ease-paper hover:text-oak-gall"
+        >
+          Log in
+        </Link>
+        <Link
+          href="/signup"
+          className="font-sans text-[11px] uppercase tracking-[0.18em] text-cordon-bleu underline decoration-cordon-bleu decoration-1 underline-offset-[3px] transition-opacity duration-[120ms] ease-paper hover:opacity-80"
+        >
+          Sign up
+        </Link>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-5">
+      <Link
+        href="/app"
+        className="font-sans text-[11px] uppercase tracking-[0.18em] text-sepia transition-colors duration-[120ms] ease-paper hover:text-oak-gall"
+      >
+        Dashboard
+      </Link>
+      <form action={logoutAction}>
+        <button
+          type="submit"
+          className="font-sans text-[11px] uppercase tracking-[0.18em] text-sepia transition-colors duration-[120ms] ease-paper hover:text-oak-gall"
+        >
+          Log out
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function RequestCta({
+  user,
+  restaurantSlug,
+}: {
+  user: CurrentUser | null;
+  restaurantSlug: string;
+}) {
+  // Logged out → Cordon-Bleu CTA that links to /login with the return path
+  if (!user) {
+    return (
+      <Link
+        href={`/login?next=/r/${restaurantSlug}`}
+        className="group relative flex h-16 w-full items-center justify-center gap-3 bg-cordon-bleu px-6 font-display text-2xl italic text-vellum transition-colors duration-[120ms] ease-paper hover:bg-cordon-bleu-dark"
+      >
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-1 border border-gold-leaf/40"
+        />
+        <span>Sign in to request a stage</span>
+      </Link>
+    );
+  }
+
+  // Stagiaire → primary CTA (request flow itself ships in a later checkpoint)
+  if (user.role === "stagiaire") {
+    return (
+      <div className="flex flex-col gap-3">
+        <button
+          type="button"
+          disabled
+          className="group relative flex h-16 w-full items-center justify-center gap-3 bg-cordon-bleu px-6 font-display text-2xl italic text-vellum opacity-95"
+          title="Request flow ships in a later checkpoint"
+        >
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-1 border border-gold-leaf/50"
+          />
+          <span>Request a stage</span>
+        </button>
+        <p className="font-sans text-[11px] uppercase tracking-[0.18em] text-sepia">
+          The date picker + request submission lands in the next checkpoint.
+        </p>
+      </div>
+    );
+  }
+
+  // Restaurant owner / admin → not the audience for this CTA
+  return (
+    <div className="border border-sepia/30 px-6 py-5">
+      <p className="font-serif text-sm italic text-sepia">
+        Stage requests are submitted by stagiaires. Your account is a {user.role.replace("_", " ")}.
+      </p>
+    </div>
   );
 }
 

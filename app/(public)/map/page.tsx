@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { MapView } from "@/components/features/map/map-view";
 import { db } from "@/lib/db";
 import { restaurantProfiles } from "@/db/schema";
+import { getCurrentUser } from "@/lib/auth";
 
 /*
  * /map — public globe of all starred restaurants.
@@ -34,18 +35,21 @@ export type RestaurantPin = {
 };
 
 export default async function MapPage() {
-  const rows = await db
-    .select({
-      id: restaurantProfiles.id,
-      slug: restaurantProfiles.slug,
-      name: restaurantProfiles.name,
-      city: restaurantProfiles.city,
-      stars: restaurantProfiles.stars,
-      lat: restaurantProfiles.lat,
-      lng: restaurantProfiles.lng,
-      blurb: restaurantProfiles.blurb,
-    })
-    .from(restaurantProfiles);
+  const [rows, user] = await Promise.all([
+    db
+      .select({
+        id: restaurantProfiles.id,
+        slug: restaurantProfiles.slug,
+        name: restaurantProfiles.name,
+        city: restaurantProfiles.city,
+        stars: restaurantProfiles.stars,
+        lat: restaurantProfiles.lat,
+        lng: restaurantProfiles.lng,
+        blurb: restaurantProfiles.blurb,
+      })
+      .from(restaurantProfiles),
+    getCurrentUser(),
+  ]);
 
   // Drop any rows missing coords (shouldn't happen with current seed,
   // but defensive — globe pins need lat/lng).
@@ -62,5 +66,5 @@ export default async function MapPage() {
       blurb: r.blurb,
     }));
 
-  return <MapView pins={pins} />;
+  return <MapView pins={pins} viewer={user ? { email: user.email } : null} />;
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { Rosette, RosetteRow } from "@/components/ui/rosette";
+import { logoutAction } from "@/lib/auth-actions";
 import type { RestaurantPin } from "@/app/(public)/map/page";
 
 /*
@@ -30,7 +31,9 @@ const GlobeCanvas = dynamic(() => import("./globe-canvas").then((m) => m.GlobeCa
 
 type Tier = 1 | 2 | 3;
 
-export function MapView({ pins }: { pins: RestaurantPin[] }) {
+type Viewer = { email: string } | null;
+
+export function MapView({ pins, viewer }: { pins: RestaurantPin[]; viewer: Viewer }) {
   const [tiers, setTiers] = useState<Set<Tier>>(new Set([1, 2, 3]));
   const [active, setActive] = useState<RestaurantPin | null>(null);
 
@@ -88,11 +91,50 @@ export function MapView({ pins }: { pins: RestaurantPin[] }) {
         </div>
       </div>
 
-      {/* Bottom-left: small attribution + back link */}
+      {/* Bottom-left: small attribution */}
       <div className="pointer-events-none absolute bottom-0 left-0 z-10 p-8">
         <p className="font-sans text-[10px] uppercase tracking-[0.18em] text-sepia">
           France · v0 · 1/2/3-star Michelin
         </p>
+      </div>
+
+      {/* Top-right: auth nav */}
+      <div className="pointer-events-none absolute right-0 top-0 z-10 p-8">
+        <div className="pointer-events-auto flex items-center gap-5">
+          {viewer ? (
+            <>
+              <Link
+                href="/app"
+                className="font-sans text-[11px] uppercase tracking-[0.18em] text-sepia transition-colors duration-[120ms] ease-paper hover:text-oak-gall"
+              >
+                Dashboard
+              </Link>
+              <form action={logoutAction}>
+                <button
+                  type="submit"
+                  className="font-sans text-[11px] uppercase tracking-[0.18em] text-sepia transition-colors duration-[120ms] ease-paper hover:text-oak-gall"
+                >
+                  Log out
+                </button>
+              </form>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login?next=/map"
+                className="font-sans text-[11px] uppercase tracking-[0.18em] text-sepia transition-colors duration-[120ms] ease-paper hover:text-oak-gall"
+              >
+                Log in
+              </Link>
+              <Link
+                href="/signup"
+                className="font-sans text-[11px] uppercase tracking-[0.18em] text-cordon-bleu underline decoration-cordon-bleu decoration-1 underline-offset-[3px] transition-opacity duration-[120ms] ease-paper hover:opacity-80"
+              >
+                Sign up
+              </Link>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Right-edge card overlay when a pin is selected */}
