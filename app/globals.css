@@ -35,6 +35,7 @@
   /* Type */
   --font-serif: var(--font-source-serif);
   --font-display: var(--font-fraunces);
+  --font-headline: var(--font-opsmarckt); /* restaurant names + wordmark only */
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains-mono);
 

@@ -61,7 +61,7 @@ export default async function RestaurantProfilePage({ params }: PageProps) {
         <div className="mx-auto flex max-w-5xl items-center justify-between px-8 py-5">
           <Link
             href="/"
-            className="font-display text-2xl italic tracking-tight text-oak-gall transition-opacity duration-[120ms] ease-paper hover:opacity-80"
+            className="font-headline text-2xl tracking-tight text-oak-gall transition-opacity duration-[120ms] ease-paper hover:opacity-80"
           >
             Stagiaire
           </Link>
@@ -92,7 +92,7 @@ export default async function RestaurantProfilePage({ params }: PageProps) {
         </div>
 
         {/* Restaurant name */}
-        <h1 className="font-display text-6xl italic leading-[0.95] tracking-tight text-oak-gall sm:text-7xl">
+        <h1 className="font-headline text-6xl leading-[1.0] tracking-tight text-oak-gall sm:text-7xl">
           {r.name}
         </h1>
 

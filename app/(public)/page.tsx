@@ -48,7 +48,7 @@ export default function SpecimenPage() {
           <p className="font-sans text-[11px] uppercase tracking-[0.18em] text-sepia">
             Stagiaire &middot; Design specimen
           </p>
-          <h1 className="mt-4 font-display text-7xl italic leading-none tracking-tight text-oak-gall">
+          <h1 className="mt-4 font-headline text-7xl leading-[1.0] tracking-tight text-oak-gall">
             Vellum &amp; oak gall
           </h1>
           <p className="mt-6 max-w-prose font-serif text-base leading-relaxed text-oak-gall-soft">
@@ -128,8 +128,8 @@ export default function SpecimenPage() {
         <section className="mb-20">
           <h2 className="mb-6 font-serif text-3xl font-light text-oak-gall">Typography</h2>
           <div className="space-y-10">
-            <Spec label="Hero — Fraunces Italic Display, 72px">
-              <p className="font-display text-7xl italic leading-none tracking-tight">
+            <Spec label="Hero — Opsmarckt, 72px (restaurant name)">
+              <p className="font-headline text-7xl leading-none tracking-tight">
                 Mirazur, Menton
               </p>
             </Spec>
@@ -138,8 +138,8 @@ export default function SpecimenPage() {
               <p className="font-serif text-4xl font-light">The team</p>
             </Spec>
 
-            <Spec label="Restaurant name on card — Fraunces Italic, 32px">
-              <p className="font-display text-3xl italic">L&rsquo;Arpège</p>
+            <Spec label="Restaurant name on card — Opsmarckt, 32px">
+              <p className="font-headline text-3xl">L&rsquo;Arpège</p>
             </Spec>
 
             <Spec label="Body — Source Serif 4, 16/1.6 with old-style figures">
