@@ -1,7 +1,11 @@
+import Link from "next/link";
+
+import { Rosette } from "@/components/ui/rosette";
+
 /*
- * Type + color specimen — not a real landing page.
- * Eyeball check for the tokens in docs/design-direction.md.
- * Will be replaced when we build the actual marketing page.
+ * Type + color specimen — not a real landing page yet. Will be replaced
+ * with the marketing landing once /map and the request flow exist.
+ * Kept here as a visual gut-check for the design tokens.
  */
 
 const colorTokens = [
@@ -21,39 +25,13 @@ const colorTokens = [
   { name: "verdigris", hex: "#6B7A55", role: "rare success", swatchClass: "bg-verdigris" },
 ];
 
-function Rosette({ tier }: { tier: 1 | 2 | 3 }) {
-  if (tier === 3) {
-    return (
-      <svg viewBox="0 0 24 24" className="h-6 w-6" aria-label="3-star pin">
-        <circle cx="12" cy="12" r="9" fill="var(--color-michelin-red)" />
-        <circle cx="12" cy="12" r="5.5" fill="none" stroke="var(--color-gold-leaf)" strokeWidth="0.75" opacity="0.6" />
-      </svg>
-    );
-  }
-  if (tier === 2) {
-    return (
-      <svg viewBox="0 0 24 24" className="h-6 w-6" aria-label="2-star pin">
-        <circle cx="12" cy="12" r="3.5" fill="var(--color-oak-gall)" />
-        <circle cx="12" cy="12" r="6" fill="none" stroke="var(--color-oak-gall)" strokeWidth="0.75" />
-        <circle cx="12" cy="12" r="9" fill="none" stroke="var(--color-oak-gall)" strokeWidth="0.75" />
-      </svg>
-    );
-  }
-  return (
-    <svg viewBox="0 0 24 24" className="h-6 w-6" aria-label="1-star pin">
-      <circle cx="12" cy="12" r="3.5" fill="var(--color-oak-gall)" />
-      <circle cx="12" cy="12" r="7" fill="none" stroke="var(--color-oak-gall)" strokeWidth="0.75" />
-    </svg>
-  );
-}
-
 function LedgerRating({ value, max = 5 }: { value: number; max?: number }) {
   return (
     <div className="inline-flex items-end gap-1.5" aria-label={`${value} of ${max}`}>
       {Array.from({ length: max }).map((_, i) => (
         <span
           key={i}
-          className={`block h-3 w-px ${i < value ? "bg-oak-gall" : "bg-sepia-faint"}`}
+          className={`block h-3 ${i < value ? "bg-oak-gall" : "bg-sepia-faint"}`}
           style={{ width: i < value ? "1.5px" : "1px" }}
         />
       ))}
@@ -80,6 +58,50 @@ export default function SpecimenPage() {
             palette feel right before any feature is built on top of them.
           </p>
         </header>
+
+        {/* See it in real use */}
+        <section className="mb-20">
+          <h2 className="mb-3 font-serif text-3xl font-light text-oak-gall">See it in real use</h2>
+          <p className="mb-6 max-w-prose font-serif text-base leading-relaxed text-oak-gall-soft">
+            The same tokens applied to actual restaurants from the seeded directory (658 France-
+            starred restaurants, all with coords and Michelin-written descriptions):
+          </p>
+          <ul className="space-y-2 font-serif">
+            <li>
+              <Link
+                href="/r/le-clos-des-sens-annecy"
+                className="text-cordon-bleu underline decoration-cordon-bleu decoration-1 underline-offset-[3px] transition-opacity duration-[120ms] ease-paper hover:opacity-80"
+              >
+                Le Clos des Sens
+              </Link>
+              <span className="ml-2 font-sans text-[11px] uppercase tracking-[0.18em] text-sepia">
+                3-star &middot; Annecy
+              </span>
+            </li>
+            <li>
+              <Link
+                href="/r/la-villa-madie-cassis"
+                className="text-cordon-bleu underline decoration-cordon-bleu decoration-1 underline-offset-[3px] transition-opacity duration-[120ms] ease-paper hover:opacity-80"
+              >
+                La Villa Madie
+              </Link>
+              <span className="ml-2 font-sans text-[11px] uppercase tracking-[0.18em] text-sepia">
+                3-star &middot; Cassis
+              </span>
+            </li>
+            <li>
+              <Link
+                href="/r/le-1947-a-cheval-blanc-courchevel"
+                className="text-cordon-bleu underline decoration-cordon-bleu decoration-1 underline-offset-[3px] transition-opacity duration-[120ms] ease-paper hover:opacity-80"
+              >
+                Le 1947 à Cheval Blanc
+              </Link>
+              <span className="ml-2 font-sans text-[11px] uppercase tracking-[0.18em] text-sepia">
+                3-star &middot; Courchevel
+              </span>
+            </li>
+          </ul>
+        </section>
 
         {/* Color */}
         <section className="mb-20">
@@ -209,12 +231,10 @@ export default function SpecimenPage() {
                 type="button"
                 className="group relative flex h-14 w-full max-w-sm items-center justify-center gap-3 bg-cordon-bleu px-6 font-display text-xl italic text-vellum transition-colors duration-[120ms] ease-paper hover:bg-cordon-bleu-dark"
               >
-                {/* Inset gold-leaf hairline border — the "stamped impression" detail */}
                 <span
                   aria-hidden
                   className="pointer-events-none absolute inset-1 border border-gold-leaf/50 transition-opacity duration-[120ms] ease-paper group-hover:border-gold-leaf/70"
                 />
-                {/* Wax-seal ornament */}
                 <span
                   aria-hidden
                   className="flex h-4 w-4 items-center justify-center rounded-full bg-gold-leaf/70 transition-transform duration-[120ms] ease-paper group-hover:translate-y-px"
