@@ -61,7 +61,7 @@ export default async function RestaurantProfilePage({ params }: PageProps) {
         <div className="mx-auto flex max-w-5xl items-center justify-between px-8 py-5">
           <Link
             href="/"
-            className="font-headline text-2xl tracking-tight text-oak-gall transition-opacity duration-[120ms] ease-paper hover:opacity-80"
+            className="font-headline text-3xl tracking-tight text-oak-gall transition-opacity duration-[120ms] ease-paper hover:opacity-80"
           >
             Stagiaire
           </Link>
@@ -92,7 +92,7 @@ export default async function RestaurantProfilePage({ params }: PageProps) {
         </div>
 
         {/* Restaurant name */}
-        <h1 className="font-headline text-6xl leading-[1.0] tracking-tight text-oak-gall sm:text-7xl">
+        <h1 className="font-headline text-7xl leading-[1.0] tracking-tight text-oak-gall sm:text-8xl">
           {r.name}
         </h1>
 
@@ -192,7 +192,7 @@ export default async function RestaurantProfilePage({ params }: PageProps) {
             <button
               type="button"
               disabled
-              className="group relative flex h-14 w-full items-center justify-center gap-3 bg-sepia px-6 font-display text-xl italic text-vellum opacity-90"
+              className="group relative flex h-16 w-full items-center justify-center gap-3 bg-sepia px-6 font-headline text-2xl text-vellum opacity-90"
               title="Sign in to request a stage (auth flow not yet built)"
             >
               <span

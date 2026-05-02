@@ -48,7 +48,7 @@ export default function SpecimenPage() {
           <p className="font-sans text-[11px] uppercase tracking-[0.18em] text-sepia">
             Stagiaire &middot; Design specimen
           </p>
-          <h1 className="mt-4 font-headline text-7xl leading-[1.0] tracking-tight text-oak-gall">
+          <h1 className="mt-4 font-headline text-8xl leading-[1.0] tracking-tight text-oak-gall">
             Vellum &amp; oak gall
           </h1>
           <p className="mt-6 max-w-prose font-serif text-base leading-relaxed text-oak-gall-soft">
@@ -128,8 +128,8 @@ export default function SpecimenPage() {
         <section className="mb-20">
           <h2 className="mb-6 font-serif text-3xl font-light text-oak-gall">Typography</h2>
           <div className="space-y-10">
-            <Spec label="Hero — Opsmarckt, 72px (restaurant name)">
-              <p className="font-headline text-7xl leading-none tracking-tight">
+            <Spec label="Hero — Opsmarckt, 96px (restaurant name)">
+              <p className="font-headline text-8xl leading-none tracking-tight">
                 Mirazur, Menton
               </p>
             </Spec>
@@ -156,8 +156,8 @@ export default function SpecimenPage() {
               </p>
             </Spec>
 
-            <Spec label="Marquee CTA label — Fraunces Italic Display, 20px">
-              <p className="font-display text-xl italic">Request a stage</p>
+            <Spec label="Marquee CTA label — Opsmarckt, 24px">
+              <p className="font-headline text-2xl">Request a stage</p>
             </Spec>
 
             <Spec label="Mono — JetBrains Mono, 12px (timestamps, IDs)">
@@ -229,7 +229,7 @@ export default function SpecimenPage() {
               </p>
               <button
                 type="button"
-                className="group relative flex h-14 w-full max-w-sm items-center justify-center gap-3 bg-cordon-bleu px-6 font-display text-xl italic text-vellum transition-colors duration-[120ms] ease-paper hover:bg-cordon-bleu-dark"
+                className="group relative flex h-16 w-full max-w-sm items-center justify-center gap-3 bg-cordon-bleu px-6 font-headline text-2xl text-vellum transition-colors duration-[120ms] ease-paper hover:bg-cordon-bleu-dark"
               >
                 <span
                   aria-hidden
@@ -239,7 +239,7 @@ export default function SpecimenPage() {
                   aria-hidden
                   className="flex h-4 w-4 items-center justify-center rounded-full bg-gold-leaf/70 transition-transform duration-[120ms] ease-paper group-hover:translate-y-px"
                 >
-                  <span className="font-display text-[8px] italic leading-none text-cordon-bleu-dark">
+                  <span className="font-headline text-[9px] leading-none text-cordon-bleu-dark">
                     S
                   </span>
                 </span>
