@@ -236,7 +236,9 @@ submitted ──→ pending ─┬─→ accepted ──→ confirmed ──┬�
 Core entities and key fields. Not exhaustive — the database scaffolder will fill in IDs, timestamps, soft-delete flags.
 
 ### `users`
-`id, email, password_hash, role (stagiaire | restaurant_owner | admin), email_verified_at, created_at`
+`id, email, role (stagiaire | restaurant_owner | admin), email_verified_at, created_at, updated_at`
+
+> Credentials live in Supabase's `auth.users`; this table is the public-schema profile/role extension. `users.id` matches `auth.uid()`. No `password_hash` here — Supabase Auth owns it.
 
 ### `stagiaire_profiles`
 `user_id, name, photo_url, bio, current_city, country, languages[], available_from, available_until, id_verified_at, slug`
