@@ -66,6 +66,14 @@ export default function SpecimenPage() {
             The same tokens applied to actual restaurants from the seeded directory (658 France-
             starred restaurants, all with coords and Michelin-written descriptions):
           </p>
+          <p className="mb-8">
+            <Link
+              href="/map"
+              className="font-display text-2xl italic text-cordon-bleu underline decoration-cordon-bleu decoration-1 underline-offset-[6px] transition-opacity duration-[120ms] ease-paper hover:opacity-80"
+            >
+              Open the globe →
+            </Link>
+          </p>
           <ul className="space-y-2 font-serif">
             <li>
               <Link

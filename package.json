@@ -17,7 +17,8 @@
     "next": "15.5.15",
     "postgres": "^3.4.9",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "react-globe.gl": "^2.37.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -25,6 +26,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.184.0",
     "csv-parse": "^6.2.1",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
