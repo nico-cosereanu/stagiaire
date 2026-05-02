@@ -1,0 +1,53 @@
+# Cursor rules for Stagiaire
+
+This file mirrors `CLAUDE.md`. Read both `PLAN.md` and `CLAUDE.md` for full context — they are the source of truth.
+
+## Quick reference
+
+**Project status:** planning. No code scaffolded yet.
+
+**Stack (locked):** Next.js 15 (App Router, RSC, Server Actions) · TypeScript strict · Tailwind v4 + shadcn/ui · Supabase (Postgres + Auth + Storage + Realtime) · Drizzle ORM · react-globe.gl · Resend · Stripe Identity · PostHog · Sentry · Vercel.
+
+## Code style
+
+- Server Components by default; `"use client"` only when interactivity is required
+- Server Actions for mutations; avoid API routes unless required by webhooks
+- Zod for all validation; share schemas across client/server
+- Drizzle queries co-located with the feature
+- `cn()` for conditional Tailwind classes; no inline styles
+- TypeScript: no `any`, no `as` casts unless unavoidable, narrow types properly
+- Components: PascalCase, files: kebab-case
+- Early returns; minimal nesting
+
+## File layout
+
+```
+app/(public)/    public routes
+app/(auth)/      login, signup
+app/app/         stagiaire dashboard
+app/restaurant/  restaurant dashboard
+app/admin/       admin
+components/ui/   shadcn primitives
+components/features/
+db/schema.ts     drizzle schema
+db/migrations/
+lib/             auth, supabase client, email helpers
+data/            seed data
+docs/            ADRs / decision logs
+```
+
+## Hard rules
+
+- No top-level deps without asking
+- No model changes without updating `PLAN.md` §14
+- No monetization, payments, housing — out of scope for v1
+- Only Michelin-starred restaurants in the directory
+- Never fabricate chef names or team data
+
+## Commits
+
+`feat: …` / `fix: …` / `chore: …` / `refactor: …` / `docs: …` — imperative, lowercase, no period.
+
+## Build order
+
+See `PLAN.md` §20. Don't skip ahead.

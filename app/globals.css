@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens — see docs/design-direction.md
+ * Surfaces, inks, Cordon Bleu (primary), reserved accents, motion.
+ * All tokens become Tailwind v4 utilities automatically:
+ *   --color-vellum  ->  bg-vellum, text-vellum, border-vellum, etc.
+ *   --font-display  ->  font-display
+ *   --ease-paper    ->  ease-paper
+ */
+
+@theme {
+  /* Surfaces */
+  --color-vellum: #f4ecd8;
+  --color-vellum-aged: #ebe0c5;
+  --color-ermine: #faf6e9;
+
+  /* Inks */
+  --color-oak-gall: #1f1a12;
+  --color-oak-gall-soft: #2d2417;
+  --color-sepia: #8b6f47;
+  --color-sepia-faint: #b89f7a;
+
+  /* Cordon Bleu — primary action */
+  --color-cordon-bleu: #1b2c5c;
+  --color-cordon-bleu-dark: #0f1a38;
+  --color-cordon-bleu-wash: #e8eaf1;
+
+  /* Reserved accents */
+  --color-michelin-red: #b0151a;
+  --color-crimson-wash: #c97d7a;
+  --color-gold-leaf: #b58a3a;
+  --color-verdigris: #6b7a55;
+
+  /* Type */
+  --font-serif: var(--font-source-serif);
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
+
+  /* Motion */
+  --ease-paper: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/*
+ * Page defaults — vellum ground, oak-gall ink, body serif, old-style figures.
+ */
+html {
+  background: var(--color-vellum);
+  color: var(--color-oak-gall);
+}
+
+body {
+  font-family: var(--font-serif), Georgia, serif;
+  font-feature-settings: "onum" 1; /* old-style figures by default */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/*
+ * Selection — keep the parchment register; no neon-blue browser default.
+ */
+::selection {
+  background: var(--color-cordon-bleu);
+  color: var(--color-vellum);
+}
+
+/*
+ * Reduced motion — disable everything that's not opacity.
+ * Per design-direction.md §5.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
