@@ -109,6 +109,23 @@ export default function SpecimenPage() {
               </span>
             </li>
           </ul>
+
+          <p className="mt-8 max-w-prose font-serif text-base leading-relaxed text-oak-gall-soft">
+            And a sample stagiaire profile (real schema, hand-written test row):
+          </p>
+          <ul className="mt-2 space-y-2 font-serif">
+            <li>
+              <Link
+                href="/u/camille-brun-lyon"
+                className="text-cordon-bleu underline decoration-cordon-bleu decoration-1 underline-offset-[3px] transition-opacity duration-[120ms] ease-paper hover:opacity-80"
+              >
+                Camille Brun
+              </Link>
+              <span className="ml-2 font-sans text-[11px] uppercase tracking-[0.18em] text-sepia">
+                Stagiaire &middot; Lyon
+              </span>
+            </li>
+          </ul>
         </section>
 
         {/* Color */}
