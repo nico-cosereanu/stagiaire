@@ -44,6 +44,7 @@ const COLORS = {
   oakGall: "#1F1A12",
   michelinRed: "#B0151A",
   goldLeaf: "#B58A3A",
+  sepia: "#8B6F47",
 } as const;
 
 export function GlobeCanvas({
@@ -69,6 +70,15 @@ export function GlobeCanvas({
       .then((r) => r.json() as Promise<GeoJsonFeatureCollection>)
       .then((g) => setCountries(g.features));
   }, []);
+
+  // Overlay layer: rosette pins + place-name labels share a single
+  // htmlElementsData collection (react-globe.gl supports only one).
+  const overlays = useMemo<GlobeOverlay[]>(() => {
+    const out: GlobeOverlay[] = pins.map((pin) => ({ kind: "pin", pin }));
+    for (const c of CITY_LABELS) out.push({ kind: "city", ...c });
+    for (const r of REGION_LABELS) out.push({ kind: "region", ...r });
+    return out;
+  }, [pins]);
 
   const globeMaterial = useMemo(() => {
     const texture = buildParchmentTexture();
@@ -107,18 +117,18 @@ export function GlobeCanvas({
       showAtmosphere={false}
       globeMaterial={globeMaterial}
       onGlobeClick={handleGlobeClick}
-      // Country outlines
+      // Country outlines + coastlines
       polygonsData={countries}
       polygonAltitude={0.005}
       polygonCapColor={() => "rgba(0,0,0,0)"}
       polygonSideColor={() => "rgba(0,0,0,0)"}
       polygonStrokeColor={() => COLORS.oakGallSoft}
-      // Restaurant pins as inked rosettes
-      htmlElementsData={pins}
-      htmlLat={(d: object) => (d as RestaurantPin).lat}
-      htmlLng={(d: object) => (d as RestaurantPin).lng}
+      // Restaurant pins (rosettes) + place-name labels (cities, regions)
+      htmlElementsData={overlays}
+      htmlLat={(d: object) => latOf(d as GlobeOverlay)}
+      htmlLng={(d: object) => lngOf(d as GlobeOverlay)}
       htmlAltitude={0.005}
-      htmlElement={(d: object) => makeRosetteEl(d as RestaurantPin, onPinClick)}
+      htmlElement={(d: object) => makeOverlayEl(d as GlobeOverlay, onPinClick)}
       htmlElementVisibilityModifier={(el, isVisible) => {
         (el as HTMLElement).style.opacity = isVisible ? "1" : "0";
         (el as HTMLElement).style.pointerEvents = isVisible ? "auto" : "none";
@@ -174,6 +184,108 @@ function makeRosetteEl(
   });
 
   return wrapper;
+}
+
+/*
+ * Place-name labels — hand-curated subset of major French cities and
+ * historic regions, matching the editorial register of antique maps.
+ * Coordinates are approximate centroids.
+ */
+
+type CityLabel = { lat: number; lng: number; name: string };
+type RegionLabel = { lat: number; lng: number; name: string };
+
+const CITY_LABELS: CityLabel[] = [
+  { name: "Paris", lat: 48.8566, lng: 2.3522 },
+  { name: "Lyon", lat: 45.764, lng: 4.8357 },
+  { name: "Marseille", lat: 43.2965, lng: 5.3698 },
+  { name: "Toulouse", lat: 43.6047, lng: 1.4442 },
+  { name: "Nice", lat: 43.7102, lng: 7.262 },
+  { name: "Nantes", lat: 47.2184, lng: -1.5536 },
+  { name: "Strasbourg", lat: 48.5734, lng: 7.7521 },
+  { name: "Bordeaux", lat: 44.8378, lng: -0.5792 },
+  { name: "Lille", lat: 50.6292, lng: 3.0573 },
+  { name: "Rennes", lat: 48.1173, lng: -1.6778 },
+  { name: "Reims", lat: 49.2583, lng: 4.0317 },
+  { name: "Montpellier", lat: 43.6108, lng: 3.8767 },
+  { name: "Annecy", lat: 45.8992, lng: 6.1294 },
+  { name: "Dijon", lat: 47.322, lng: 5.0415 },
+];
+
+const REGION_LABELS: RegionLabel[] = [
+  { name: "Bretagne", lat: 48.2, lng: -3.0 },
+  { name: "Normandie", lat: 49.2, lng: 0.5 },
+  { name: "Provence", lat: 43.9, lng: 6.0 },
+  { name: "Aquitaine", lat: 44.6, lng: -0.5 },
+  { name: "Bourgogne", lat: 47.0, lng: 4.5 },
+  { name: "Champagne", lat: 48.9, lng: 4.4 },
+  { name: "Languedoc", lat: 43.7, lng: 3.5 },
+  { name: "Alsace", lat: 48.3, lng: 7.5 },
+];
+
+type GlobeOverlay =
+  | { kind: "pin"; pin: RestaurantPin }
+  | (CityLabel & { kind: "city" })
+  | (RegionLabel & { kind: "region" });
+
+function latOf(o: GlobeOverlay): number {
+  return o.kind === "pin" ? o.pin.lat : o.lat;
+}
+
+function lngOf(o: GlobeOverlay): number {
+  return o.kind === "pin" ? o.pin.lng : o.lng;
+}
+
+function makeOverlayEl(
+  o: GlobeOverlay,
+  onPinClick: (p: RestaurantPin) => void,
+): HTMLElement {
+  if (o.kind === "pin") return makeRosetteEl(o.pin, onPinClick);
+  if (o.kind === "city") return makeCityLabel(o.name);
+  return makeRegionLabel(o.name);
+}
+
+/*
+ * City label — italic serif, mixed case, oak-gall, slightly translucent
+ * so it doesn't compete with the rosette pins overlapping it.
+ */
+function makeCityLabel(name: string): HTMLElement {
+  const el = document.createElement("div");
+  el.style.cssText = `
+    font-family: var(--font-source-serif), Georgia, serif;
+    font-style: italic;
+    font-size: 11px;
+    color: ${COLORS.oakGall};
+    white-space: nowrap;
+    transform: translate(8px, -50%);
+    letter-spacing: 0.01em;
+    pointer-events: none;
+    text-shadow: 0 0 3px rgba(244, 236, 216, 0.95);
+  `;
+  el.textContent = name;
+  return el;
+}
+
+/*
+ * Region label — italic small-caps, sepia, wider tracking.
+ * For historic French regions; sits behind any cities in the same area.
+ */
+function makeRegionLabel(name: string): HTMLElement {
+  const el = document.createElement("div");
+  el.style.cssText = `
+    font-family: var(--font-source-serif), Georgia, serif;
+    font-style: italic;
+    font-size: 12px;
+    color: ${COLORS.sepia};
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    white-space: nowrap;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    text-shadow: 0 0 4px rgba(244, 236, 216, 0.9);
+  `;
+  el.textContent = name;
+  return el;
 }
 
 function svgForTier(tier: 1 | 2 | 3): string {
