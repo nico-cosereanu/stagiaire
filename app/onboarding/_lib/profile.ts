@@ -48,7 +48,40 @@ export async function generateUniqueSlug(name: string, ownUserId: string): Promi
   }
 }
 
-export function isProfileComplete(profile: { name: string; slug: string } | undefined | null) {
+type ProfileGateInput = {
+  name: string;
+  slug: string;
+  identityVerificationStatus: "not_started" | "pending" | "verified" | "failed";
+} | undefined | null;
+
+/*
+ * Profile is "complete enough to use /app" when name + slug exist AND
+ * identity verification has at least been submitted (pending or verified).
+ * A 'pending' user is shown a banner on the dashboard but not blocked,
+ * since Stripe's review can take minutes and we don't want a hard wait.
+ */
+export function isProfileComplete(profile: ProfileGateInput) {
   if (!profile) return false;
-  return profile.name.trim().length > 0 && profile.slug.trim().length > 0;
+  if (profile.name.trim().length === 0) return false;
+  if (profile.slug.trim().length === 0) return false;
+  if (profile.identityVerificationStatus === "not_started") return false;
+  if (profile.identityVerificationStatus === "failed") return false;
+  return true;
+}
+
+/*
+ * Where to send a stagiaire whose profile fails the gate. Pick the first
+ * unfinished step so they don't have to click through completed ones.
+ */
+export function firstIncompleteStepHref(profile: ProfileGateInput): string {
+  if (!profile || profile.name.trim().length === 0 || profile.slug.trim().length === 0) {
+    return "/onboarding/name";
+  }
+  if (
+    profile.identityVerificationStatus === "not_started" ||
+    profile.identityVerificationStatus === "failed"
+  ) {
+    return "/onboarding/verify";
+  }
+  return "/onboarding/name";
 }

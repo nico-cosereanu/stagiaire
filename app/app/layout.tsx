@@ -3,7 +3,11 @@ import { redirect } from "next/navigation";
 
 import { logoutAction } from "@/lib/auth-actions";
 import { requireUser } from "@/lib/auth";
-import { getProfile, isProfileComplete } from "@/app/onboarding/_lib/profile";
+import {
+  firstIncompleteStepHref,
+  getProfile,
+  isProfileComplete,
+} from "@/app/onboarding/_lib/profile";
 
 /*
  * Stagiaire dashboard shell. Two gates:
@@ -19,7 +23,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (user.role === "stagiaire") {
     const profile = await getProfile(user.id);
     if (!isProfileComplete(profile)) {
-      redirect("/onboarding/name");
+      redirect(firstIncompleteStepHref(profile));
     }
   }
 

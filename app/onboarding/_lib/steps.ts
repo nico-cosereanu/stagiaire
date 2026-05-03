@@ -10,6 +10,7 @@ export const ONBOARDING_STEPS = [
   { slug: "languages", label: "Languages" },
   { slug: "bio", label: "Why you stage" },
   { slug: "availability", label: "When you're free" },
+  { slug: "verify", label: "Verify your ID" },
 ] as const;
 
 export type OnboardingStepSlug = (typeof ONBOARDING_STEPS)[number]["slug"];

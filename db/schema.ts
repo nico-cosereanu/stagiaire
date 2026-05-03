@@ -86,6 +86,13 @@ export const teamMemberSourceEnum = pgEnum("team_member_source", [
   "scraped",
 ]);
 
+export const identityVerificationStatusEnum = pgEnum("identity_verification_status", [
+  "not_started",
+  "pending",
+  "verified",
+  "failed",
+]);
+
 /* ─────────────────────────────────────────────────────────────────────────
  * Shared types for jsonb payloads
  * ────────────────────────────────────────────────────────────────────────*/
@@ -149,6 +156,10 @@ export const stagiaireProfiles = pgTable(
     availableFrom: date("available_from"),
     availableUntil: date("available_until"),
     idVerifiedAt: timestamp("id_verified_at", { withTimezone: true }),
+    identityVerificationStatus: identityVerificationStatusEnum("identity_verification_status")
+      .default("not_started")
+      .notNull(),
+    stripeVerificationSessionId: text("stripe_verification_session_id"),
     slug: text("slug").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { requireUser } from "@/lib/auth";
+import { getProfile } from "@/app/onboarding/_lib/profile";
 
 export const metadata: Metadata = {
   title: "Dashboard · Stagiaire",
@@ -17,9 +18,22 @@ export const metadata: Metadata = {
 
 export default async function DashboardPage() {
   const user = await requireUser();
+  const profile = user.role === "stagiaire" ? await getProfile(user.id) : null;
+  const verificationPending = profile?.identityVerificationStatus === "pending";
 
   return (
     <div className="mx-auto max-w-3xl px-8 py-20">
+      {verificationPending && (
+        <div className="mb-10 border border-sepia/30 bg-ermine px-5 py-4 font-serif text-sm text-oak-gall">
+          <span className="font-sans text-[11px] uppercase tracking-[0.18em] text-sepia">
+            ID verification in review
+          </span>
+          <p className="mt-1">
+            Stripe is still checking your documents. You can browse and request stages, but
+            chefs will see a &ldquo;pending&rdquo; badge on your profile until it clears.
+          </p>
+        </div>
+      )}
       <p className="font-sans text-[11px] uppercase tracking-[0.18em] text-sepia">
         {user.role === "stagiaire" ? "Stagiaire dashboard" : `Dashboard · ${user.role}`}
       </p>
