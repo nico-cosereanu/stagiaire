@@ -1,15 +1,27 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { logoutAction } from "@/lib/auth-actions";
 import { requireUser } from "@/lib/auth";
+import { getProfile, isProfileComplete } from "@/app/onboarding/_lib/profile";
 
 /*
- * Stagiaire dashboard shell. Anything under /app/* requires a signed-in
- * stagiaire user; the layout enforces that gate.
+ * Stagiaire dashboard shell. Two gates:
+ *   1. requireUser() — must be signed in
+ *   2. profile must be complete enough (name + slug) — otherwise punt
+ *      to onboarding. Restaurant_owner / admin roles skip this gate
+ *      since they don't fill stagiaire_profiles.
  */
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
+
+  if (user.role === "stagiaire") {
+    const profile = await getProfile(user.id);
+    if (!isProfileComplete(profile)) {
+      redirect("/onboarding/name");
+    }
+  }
 
   return (
     <div className="min-h-screen bg-vellum text-oak-gall">

@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { createClient } from "@/lib/supabase/server";
@@ -61,11 +62,15 @@ export async function signupAction(
     return { ok: false, error: error.message };
   }
 
-  // If session is null, Supabase requires email confirmation.
-  const needsEmailConfirmation = !data.session;
+  // If session is null, Supabase requires email confirmation — surface the
+  // "check your inbox" state. Otherwise the user is signed in immediately;
+  // punt them straight into onboarding.
+  if (data.session) {
+    redirect("/onboarding/name");
+  }
   return {
     ok: true,
-    needsEmailConfirmation,
+    needsEmailConfirmation: true,
     email: parsed.data.email,
   };
 }
