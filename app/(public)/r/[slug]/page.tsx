@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { eq } from "drizzle-orm";
+import { and, desc, eq, isNotNull } from "drizzle-orm";
 
-import { Rosette, RosetteRow } from "@/components/ui/rosette";
+import { ReviewDisplay } from "@/components/features/requests/review-display";
+import { RosetteRow } from "@/components/ui/rosette";
 import { db } from "@/lib/db";
-import { restaurantProfiles } from "@/db/schema";
-import { getCurrentUser, type CurrentUser } from "@/lib/auth";
+import { restaurantProfiles, reviews, stagiaireProfiles, stageRequests } from "@/db/schema";
+import { getCurrentUser, roleHome, type CurrentUser } from "@/lib/auth";
 import { logoutAction } from "@/lib/auth-actions";
+
+import { InteractiveStageRequest } from "./_components/interactive-stage-request";
 
 /*
  * Public restaurant profile — /r/[slug]
@@ -25,7 +29,10 @@ import { logoutAction } from "@/lib/auth-actions";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ start?: string; end?: string }>;
 };
+
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 async function getRestaurant(slug: string) {
   const [row] = await db
@@ -36,22 +43,73 @@ async function getRestaurant(slug: string) {
   return row ?? null;
 }
 
+async function getKitchenReviews(restaurantId: string) {
+  return db
+    .select({
+      id: reviews.id,
+      body: reviews.body,
+      ratings: reviews.ratings,
+      visibleAt: reviews.visibleAt,
+      stagiaireName: stagiaireProfiles.name,
+      stagiaireSlug: stagiaireProfiles.slug,
+    })
+    .from(reviews)
+    .innerJoin(stageRequests, eq(reviews.stageRequestId, stageRequests.id))
+    .innerJoin(stagiaireProfiles, eq(stageRequests.stagiaireId, stagiaireProfiles.userId))
+    .where(
+      and(
+        eq(stageRequests.restaurantId, restaurantId),
+        eq(reviews.direction, "s_to_r"),
+        isNotNull(reviews.visibleAt),
+      ),
+    )
+    .orderBy(desc(reviews.visibleAt));
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const r = await getRestaurant(slug);
-  if (!r) return { title: "Restaurant not found · Stagiaire" };
+  if (!r) return { title: "Restaurant not found" };
 
+  const place = r.city ?? r.country ?? "";
   const starLabel = r.stars === 1 ? "1 Michelin star" : `${r.stars} Michelin stars`;
+  const title = place ? `${r.name} — ${place}` : r.name;
+  const description = (r.blurb ?? `${starLabel} · ${place || r.name}.`).slice(0, 160);
+  const ogImage = r.heroImageUrl ? `${r.heroImageUrl}?width=1200` : null;
+
   return {
-    title: `${r.name} · ${r.city ?? r.country ?? ""} — Stagiaire`,
-    description: r.blurb ?? `${starLabel}. ${r.name}, ${r.city ?? ""}.`,
+    title,
+    description,
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      url: `/r/${r.slug}`,
+      ...(ogImage
+        ? { images: [{ url: ogImage, width: 1200, height: 1200, alt: r.name }] }
+        : {}),
+    },
+    twitter: {
+      card: ogImage ? "summary_large_image" : "summary",
+      title,
+      description,
+      ...(ogImage ? { images: [ogImage] } : {}),
+    },
   };
 }
 
-export default async function RestaurantProfilePage({ params }: PageProps) {
-  const { slug } = await params;
+export default async function RestaurantProfilePage({ params, searchParams }: PageProps) {
+  const [{ slug }, sp] = await Promise.all([params, searchParams]);
   const [r, user] = await Promise.all([getRestaurant(slug), getCurrentUser()]);
   if (!r) notFound();
+
+  const kitchenReviews = await getKitchenReviews(r.id);
+
+  // Carry the date range through from /discover or the homepage search.
+  // Both endpoints must be valid ISO; otherwise we ignore the params and
+  // start with an empty picker.
+  const initialStartDate = sp.start && ISO_DATE_RE.test(sp.start) ? sp.start : "";
+  const initialEndDate = sp.end && ISO_DATE_RE.test(sp.end) ? sp.end : "";
 
   const tier = r.stars as 1 | 2 | 3;
   const starWord = tier === 1 ? "1 star" : `${tier} stars`;
@@ -72,8 +130,11 @@ export default async function RestaurantProfilePage({ params }: PageProps) {
       </header>
 
       <article className="mx-auto max-w-3xl px-8 py-20">
+        {/* Hero image — falls back to an editorial placeholder when null */}
+        <RestaurantHero src={r.heroImageUrl} name={r.name} tier={tier} />
+
         {/* Tagline above the name */}
-        <div className="mb-6 flex items-center gap-3">
+        <div className="mb-6 mt-12 flex items-center gap-3">
           <RosetteRow tier={tier} size={14} />
           <p className="font-sans text-[11px] uppercase tracking-[0.18em] text-sepia">
             <span>Michelin</span>
@@ -93,18 +154,88 @@ export default async function RestaurantProfilePage({ params }: PageProps) {
           {r.name}
         </h1>
 
-        {/* Blurb */}
+        {/* Tagline (blurb) — short pitch the owner wrote in the editor */}
         {r.blurb && (
-          <p className="mt-8 max-w-prose font-serif text-lg leading-relaxed text-oak-gall-soft">
+          <p className="mt-6 font-serif text-xl italic leading-snug text-oak-gall-soft sm:text-2xl">
             {r.blurb}
           </p>
         )}
+
+        {/* The facts grid — Address / Head chef / Cuisine / Website /
+            Instagram / Menu. Each cell collapses gracefully when the
+            value is missing. */}
+        <section className="mt-10 grid grid-cols-1 gap-x-10 gap-y-8 sm:grid-cols-2 md:grid-cols-3">
+          <DefinitionBlock label="Address">
+            <p className="font-serif text-base leading-relaxed text-oak-gall-soft">{r.address}</p>
+          </DefinitionBlock>
+
+          <DefinitionBlock label="Head chef">
+            <p className={`font-serif text-base ${r.headChef ? "text-oak-gall-soft" : "text-sepia-faint"}`}>
+              {r.headChef ?? "—"}
+            </p>
+          </DefinitionBlock>
+
+          <DefinitionBlock label="Cuisine">
+            {r.cuisineTags && r.cuisineTags.length > 0 ? (
+              <p className="font-serif text-base text-oak-gall-soft">
+                {r.cuisineTags.join(", ")}
+              </p>
+            ) : (
+              <p className="font-serif text-base text-sepia-faint">—</p>
+            )}
+          </DefinitionBlock>
+
+          <DefinitionBlock label="Website">
+            {r.websiteUrl ? (
+              <a
+                href={r.websiteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="break-words font-serif text-base text-cordon-bleu underline decoration-cordon-bleu decoration-1 underline-offset-[3px] transition-opacity duration-[120ms] ease-paper hover:opacity-80"
+              >
+                {prettyUrl(r.websiteUrl)} ↗
+              </a>
+            ) : (
+              <p className="font-serif text-base text-sepia-faint">—</p>
+            )}
+          </DefinitionBlock>
+
+          <DefinitionBlock label="Instagram">
+            {r.instagramHandle ? (
+              <a
+                href={`https://instagram.com/${r.instagramHandle}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="break-words font-serif text-base text-cordon-bleu underline decoration-cordon-bleu decoration-1 underline-offset-[3px] transition-opacity duration-[120ms] ease-paper hover:opacity-80"
+              >
+                @{r.instagramHandle} ↗
+              </a>
+            ) : (
+              <p className="font-serif text-base text-sepia-faint">—</p>
+            )}
+          </DefinitionBlock>
+
+          <DefinitionBlock label="Menu">
+            {r.menuUrl ? (
+              <a
+                href={r.menuUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="break-words font-serif text-base text-cordon-bleu underline decoration-cordon-bleu decoration-1 underline-offset-[3px] transition-opacity duration-[120ms] ease-paper hover:opacity-80"
+              >
+                View menu ↗
+              </a>
+            ) : (
+              <p className="font-serif text-base text-sepia-faint">—</p>
+            )}
+          </DefinitionBlock>
+        </section>
 
         {/* Hairline divider */}
         <hr className="my-16 border-0 border-t border-sepia/30" />
 
         {/* Long description (full Michelin write-up) */}
-        {r.longDescription && r.longDescription !== r.blurb && (
+        {r.longDescription && (
           <section className="mb-16">
             <h2 className="mb-6 font-sans text-[11px] uppercase tracking-[0.18em] text-sepia">
               About the restaurant
@@ -116,42 +247,6 @@ export default async function RestaurantProfilePage({ params }: PageProps) {
             </div>
           </section>
         )}
-
-        {/* Visit — address, cuisine, website, source */}
-        <section className="mb-16 grid grid-cols-1 gap-10 sm:grid-cols-2">
-          <DefinitionBlock label="Address">
-            <p className="font-serif text-base leading-relaxed text-oak-gall-soft">{r.address}</p>
-          </DefinitionBlock>
-
-          {r.cuisineTags && r.cuisineTags.length > 0 && (
-            <DefinitionBlock label="Cuisine">
-              <p className="font-serif text-base text-oak-gall-soft">
-                {r.cuisineTags.join(", ")}
-              </p>
-            </DefinitionBlock>
-          )}
-
-          {r.websiteUrl && (
-            <DefinitionBlock label="Website">
-              <a
-                href={r.websiteUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-serif text-base text-cordon-bleu underline decoration-cordon-bleu decoration-1 underline-offset-[3px] transition-opacity duration-[120ms] ease-paper hover:opacity-80"
-              >
-                {prettyUrl(r.websiteUrl)} ↗
-              </a>
-            </DefinitionBlock>
-          )}
-
-          {r.lat != null && r.lng != null && (
-            <DefinitionBlock label="Coordinates">
-              <p className="font-mono text-sm text-sepia">
-                {r.lat.toFixed(4)}, {r.lng.toFixed(4)}
-              </p>
-            </DefinitionBlock>
-          )}
-        </section>
 
         {/* Empty-state slots — show the page's eventual shape */}
         <hr className="my-16 border-0 border-t border-sepia/30" />
@@ -165,28 +260,38 @@ export default async function RestaurantProfilePage({ params }: PageProps) {
           />
         </section>
 
-        <section className="mb-16">
-          <h2 className="mb-6 font-sans text-[11px] uppercase tracking-[0.18em] text-sepia">
-            Open windows
-          </h2>
-          <EmptyState
-            text="The restaurant has not published stage windows. Requests for any date are still accepted."
-          />
-        </section>
-
-        <section className="mb-16">
-          <h2 className="mb-6 font-sans text-[11px] uppercase tracking-[0.18em] text-sepia">
-            Kitchen-side reviews
-          </h2>
-          <EmptyState
-            text="No reviews yet. Reviews are written by stagiaires who have completed a stage here."
-          />
-        </section>
-
-        {/* Marquee CTA — auth-aware */}
-        <section className="mb-16">
-          <RequestCta user={user} restaurantSlug={r.slug} />
-        </section>
+        <InteractiveStageRequest
+          closedWindows={r.closedWindows ?? []}
+          todayIso={todayIso()}
+          user={user}
+          restaurantSlug={r.slug}
+          hasOwner={r.claimedByUserId !== null}
+          initialStartDate={initialStartDate}
+          initialEndDate={initialEndDate}
+        >
+          <section className="mb-16">
+            <h2 className="mb-6 font-sans text-[11px] uppercase tracking-[0.18em] text-sepia">
+              Kitchen-side reviews
+            </h2>
+            {kitchenReviews.length === 0 ? (
+              <EmptyState
+                text="No reviews yet. Reviews are written by stagiaires who have completed a stage here."
+              />
+            ) : (
+              <div className="space-y-6">
+                {kitchenReviews.map((rv) => (
+                  <ReviewDisplay
+                    key={rv.id}
+                    direction="s_to_r"
+                    ratings={rv.ratings}
+                    body={rv.body}
+                    authorLabel={`From ${rv.stagiaireName}`}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        </InteractiveStageRequest>
 
         {/* Footer */}
         <footer className="border-t border-sepia/30 pt-6">
@@ -224,13 +329,14 @@ function PublicNav({ user }: { user: CurrentUser | null }) {
       </div>
     );
   }
+  const home = roleHome(user.role);
   return (
     <div className="flex items-center gap-5">
       <Link
-        href="/app"
+        href={home.href}
         className="font-sans text-[11px] uppercase tracking-[0.18em] text-sepia transition-colors duration-[120ms] ease-paper hover:text-oak-gall"
       >
-        Dashboard
+        {home.label}
       </Link>
       <form action={logoutAction}>
         <button
@@ -240,62 +346,6 @@ function PublicNav({ user }: { user: CurrentUser | null }) {
           Log out
         </button>
       </form>
-    </div>
-  );
-}
-
-function RequestCta({
-  user,
-  restaurantSlug,
-}: {
-  user: CurrentUser | null;
-  restaurantSlug: string;
-}) {
-  // Logged out → Cordon-Bleu CTA that links to /login with the return path
-  if (!user) {
-    return (
-      <Link
-        href={`/login?next=/r/${restaurantSlug}`}
-        className="group relative flex h-16 w-full items-center justify-center gap-3 bg-cordon-bleu px-6 font-display text-2xl italic text-vellum transition-colors duration-[120ms] ease-paper hover:bg-cordon-bleu-dark"
-      >
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-1 border border-gold-leaf/40"
-        />
-        <span>Sign in to request a stage</span>
-      </Link>
-    );
-  }
-
-  // Stagiaire → primary CTA (request flow itself ships in a later checkpoint)
-  if (user.role === "stagiaire") {
-    return (
-      <div className="flex flex-col gap-3">
-        <button
-          type="button"
-          disabled
-          className="group relative flex h-16 w-full items-center justify-center gap-3 bg-cordon-bleu px-6 font-display text-2xl italic text-vellum opacity-95"
-          title="Request flow ships in a later checkpoint"
-        >
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-1 border border-gold-leaf/50"
-          />
-          <span>Request a stage</span>
-        </button>
-        <p className="font-sans text-[11px] uppercase tracking-[0.18em] text-sepia">
-          The date picker + request submission lands in the next checkpoint.
-        </p>
-      </div>
-    );
-  }
-
-  // Restaurant owner / admin → not the audience for this CTA
-  return (
-    <div className="border border-sepia/30 px-6 py-5">
-      <p className="font-serif text-sm italic text-sepia">
-        Stage requests are submitted by stagiaires. Your account is a {user.role.replace("_", " ")}.
-      </p>
     </div>
   );
 }
@@ -315,6 +365,38 @@ function DefinitionBlock({
   );
 }
 
+function RestaurantHero({
+  src,
+  name,
+  tier,
+}: {
+  src: string | null;
+  name: string;
+  tier: 1 | 2 | 3;
+}) {
+  if (!src) {
+    return (
+      <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl border border-sepia/30 bg-ermine">
+        <div className="absolute inset-0 flex items-center justify-center">
+          <RosetteRow tier={tier} size={20} className="opacity-60" />
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="relative aspect-[16/9] w-full overflow-hidden border border-sepia/30 bg-ermine">
+      <Image
+        src={src}
+        alt={name}
+        fill
+        priority
+        sizes="(min-width: 768px) 768px, 100vw"
+        className="object-cover"
+      />
+    </div>
+  );
+}
+
 function EmptyState({ text }: { text: string }) {
   return (
     <div className="border border-sepia/30 px-6 py-8">
@@ -328,6 +410,11 @@ function splitParagraphs(text: string): string[] {
     .split(/\n{2,}|(?<=[.!?])\s{2,}/)
     .map((p) => p.trim())
     .filter(Boolean);
+}
+
+function todayIso(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 function prettyUrl(url: string): string {
