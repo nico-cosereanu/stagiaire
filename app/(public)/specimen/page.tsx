@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { Rosette } from "@/components/ui/rosette";
+import { RosetteRow } from "@/components/ui/rosette";
 
 /*
  * Type + color specimen — not a real landing page yet. Will be replaced
@@ -68,7 +68,7 @@ export default function SpecimenPage() {
           </p>
           <p className="mb-8">
             <Link
-              href="/map"
+              href="/discover?view=map"
               className="font-display text-2xl italic text-cordon-bleu underline decoration-cordon-bleu decoration-1 underline-offset-[6px] transition-opacity duration-[120ms] ease-paper hover:opacity-80"
             >
               Open the globe →
@@ -309,7 +309,7 @@ function Spec({ label, children }: { label: string; children: React.ReactNode })
 function PinDemo({ tier, label }: { tier: 1 | 2 | 3; label: string }) {
   return (
     <div className="flex flex-col items-center gap-3">
-      <Rosette tier={tier} />
+      <RosetteRow tier={tier} />
       <span className="font-sans text-[11px] uppercase tracking-wider text-sepia">{label}</span>
     </div>
   );

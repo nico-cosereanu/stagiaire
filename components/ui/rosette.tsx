@@ -1,103 +1,50 @@
 /*
- * Inked rosette — Stagiaire's pin glyph for Michelin star tiers.
- * Rendered as a small SVG. See docs/design-direction.md §3.
+ * Star-tier glyph — sitewide.
  *
- *   1-star: filled disc + single hairline outer ring (oak-gall)
- *   2-star: filled disc + two hairline outer rings (oak-gall)
- *   3-star: filled red disc + gold-leaf inner hairline ring
+ * One small filled red dot per Michelin star: 1★ = one dot, 2★ = two,
+ * 3★ = three. Replaces the older inked-rosette SVG everywhere because
+ * the count itself is the easiest-to-read distinguisher at small sizes
+ * (and on the map at glance).
  *
- * 3-star is the only place Michelin red appears decoratively in
- * the entire product.
+ *   Rosette     — single red dot. Use for fallback/decorative spots
+ *                 where a generic "Michelin" mark is wanted.
+ *   RosetteRow  — N dots based on tier. The canonical tier indicator;
+ *                 use in headers, cards, list rows.
  */
 
 type RosetteProps = {
-  tier: 1 | 2 | 3;
   size?: number;
   className?: string;
 };
 
-export function Rosette({ tier, size = 24, className }: RosetteProps) {
-  const label = `${tier}-Michelin-star marker`;
-
-  if (tier === 3) {
-    return (
-      <svg
-        viewBox="0 0 24 24"
-        width={size}
-        height={size}
-        className={className}
-        aria-label={label}
-        role="img"
-      >
-        <circle cx="12" cy="12" r="9" fill="var(--color-michelin-red)" />
-        <circle
-          cx="12"
-          cy="12"
-          r="5.5"
-          fill="none"
-          stroke="var(--color-gold-leaf)"
-          strokeWidth="0.75"
-          opacity="0.6"
-        />
-      </svg>
-    );
-  }
-
-  if (tier === 2) {
-    return (
-      <svg
-        viewBox="0 0 24 24"
-        width={size}
-        height={size}
-        className={className}
-        aria-label={label}
-        role="img"
-      >
-        <circle cx="12" cy="12" r="3.5" fill="var(--color-oak-gall)" />
-        <circle
-          cx="12"
-          cy="12"
-          r="6"
-          fill="none"
-          stroke="var(--color-oak-gall)"
-          strokeWidth="0.75"
-        />
-        <circle
-          cx="12"
-          cy="12"
-          r="9"
-          fill="none"
-          stroke="var(--color-oak-gall)"
-          strokeWidth="0.75"
-        />
-      </svg>
-    );
-  }
-
+export function Rosette({ size = 10, className = "" }: RosetteProps) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      width={size}
-      height={size}
-      className={className}
-      aria-label={label}
-      role="img"
-    >
-      <circle cx="12" cy="12" r="3.5" fill="var(--color-oak-gall)" />
-      <circle cx="12" cy="12" r="7" fill="none" stroke="var(--color-oak-gall)" strokeWidth="0.75" />
-    </svg>
+    <span
+      aria-hidden
+      className={`inline-block rounded-full bg-michelin-red ${className}`}
+      style={{ width: size, height: size }}
+    />
   );
 }
 
-/*
- * Small horizontal row of rosettes (e.g., three rosettes for a 3-star).
- * Used in the public restaurant header where star tier should read at a glance.
- */
-export function RosetteRow({ tier, size = 14 }: { tier: 1 | 2 | 3; size?: number }) {
+export function RosetteRow({
+  tier,
+  size = 10,
+  className = "",
+}: {
+  tier: 1 | 2 | 3;
+  size?: number;
+  className?: string;
+}) {
+  const gap = Math.max(2, Math.round(size * 0.3));
   return (
-    <span className="inline-flex items-center gap-1" aria-label={`${tier}-Michelin-star`}>
+    <span
+      className={`inline-flex items-center ${className}`}
+      style={{ gap }}
+      aria-label={`${tier}-Michelin-star`}
+    >
       {Array.from({ length: tier }).map((_, i) => (
-        <Rosette key={i} tier={tier} size={size} />
+        <Rosette key={i} size={size} />
       ))}
     </span>
   );

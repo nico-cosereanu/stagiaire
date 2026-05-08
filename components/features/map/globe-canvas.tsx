@@ -1,191 +1,178 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import Globe, { type GlobeMethods } from "react-globe.gl";
-import * as THREE from "three";
+import { APIProvider, AdvancedMarker, Map, useMap } from "@vis.gl/react-google-maps";
+import { useEffect, useRef } from "react";
 
-import type { RestaurantPin } from "@/app/(public)/map/page";
-import { buildParchmentTexture } from "./parchment-texture";
+import type { RestaurantPin } from "@/app/(public)/discover/_lib/filters";
 
 /*
- * WebGL globe rendering.
+ * Google-Maps-backed map view (replaces the old WebGL globe).
  *
- * - Sphere: MeshPhongMaterial with a procedurally generated parchment
- *   texture (warm aged sepia + low-amplitude grain + paper streaks +
- *   polar darkening). See parchment-texture.ts.
- * - Country polygons: oak-gall hairline outlines, transparent fills.
- *   These double as coastlines for ocean-fronting countries.
- * - Restaurant pins: Rosette SVGs as HTML overlays projected onto the
- *   sphere (htmlElementsData). 658 DOM nodes is fine — react-globe.gl
- *   uses GPU-accelerated CSS transforms per frame.
- *     - 3-star: red disc + gold inner ring, 22px
- *     - 2-star: oak-gall double-ring rosette, 18px
- *     - 1-star: oak-gall single-ring rosette, 14px
- * - Camera defaults to a view of France since all v0 pins live there.
+ * - Vector map via @vis.gl/react-google-maps with a Map ID. If the
+ *   user hasn't set NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID, we fall back to
+ *   Google's DEMO_MAP_ID so AdvancedMarker still renders.
+ * - Pins are AdvancedMarkers wrapping the existing Rosette SVG, so
+ *   they sit inside the React tree (no manual DOM management like the
+ *   old globe lib required).
+ * - Click empty map → onPinClick(null) (closes the side card).
+ * - When pins change, fit the viewport to their bounds — keeps the
+ *   filtered set framed without us hard-coding a France-centric view.
  */
 
-type GeoJsonFeatureCollection = {
-  type: "FeatureCollection";
-  features: Array<{
-    type: "Feature";
-    properties: Record<string, unknown>;
-    geometry: { type: string; coordinates: unknown };
-  }>;
-};
+const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+const MAP_ID = process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || "DEMO_MAP_ID";
 
-const COLORS = {
-  oakGallSoft: "#2D2417",
-  oakGall: "#1F1A12",
-  michelinRed: "#B0151A",
-  goldLeaf: "#B58A3A",
-} as const;
+const DEFAULT_CENTER = { lat: 46.5, lng: 2.5 };
+const DEFAULT_ZOOM = 5.5;
+
+export type LatLngBoundsLiteral = {
+  north: number;
+  south: number;
+  east: number;
+  west: number;
+};
 
 export function GlobeCanvas({
   pins,
   onPinClick,
+  onBoundsChange,
 }: {
   pins: RestaurantPin[];
   onPinClick: (pin: RestaurantPin | null) => void;
+  onBoundsChange?: (bounds: LatLngBoundsLiteral) => void;
 }) {
-  const globeRef = useRef<GlobeMethods | undefined>(undefined);
-  const [dims, setDims] = useState({ width: 0, height: 0 });
-  const [countries, setCountries] = useState<GeoJsonFeatureCollection["features"]>([]);
-
-  useEffect(() => {
-    const update = () => setDims({ width: window.innerWidth, height: window.innerHeight });
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-
-  useEffect(() => {
-    fetch("/data/countries-110m.geojson")
-      .then((r) => r.json() as Promise<GeoJsonFeatureCollection>)
-      .then((g) => setCountries(g.features));
-  }, []);
-
-  const globeMaterial = useMemo(() => {
-    const texture = buildParchmentTexture();
-    return new THREE.MeshPhongMaterial({
-      map: texture,
-      color: 0xffffff,
-      shininess: 0,
-      specular: new THREE.Color(0x000000),
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!globeRef.current) return;
-    globeRef.current.pointOfView({ lat: 46.5, lng: 2.5, altitude: 1.5 }, 0);
-    const controls = globeRef.current.controls();
-    if (controls) {
-      controls.autoRotate = false;
-      controls.enableZoom = true;
-      controls.minDistance = 110;
-      controls.maxDistance = 600;
-    }
-  }, [dims.width]);
-
-  function handleGlobeClick() {
-    onPinClick(null);
-  }
-
-  if (dims.width === 0) return null;
+  if (!API_KEY) return <SetupNotice />;
 
   return (
-    <Globe
-      ref={globeRef}
-      width={dims.width}
-      height={dims.height}
-      backgroundColor="rgba(244, 236, 216, 0)"
-      showAtmosphere={false}
-      globeMaterial={globeMaterial}
-      onGlobeClick={handleGlobeClick}
-      // Country outlines + coastlines
-      polygonsData={countries}
-      polygonAltitude={0.005}
-      polygonCapColor={() => "rgba(0,0,0,0)"}
-      polygonSideColor={() => "rgba(0,0,0,0)"}
-      polygonStrokeColor={() => COLORS.oakGallSoft}
-      // Restaurant pins as inked rosettes
-      htmlElementsData={pins}
-      htmlLat={(d: object) => (d as RestaurantPin).lat}
-      htmlLng={(d: object) => (d as RestaurantPin).lng}
-      htmlAltitude={0.005}
-      htmlElement={(d: object) => makeRosetteEl(d as RestaurantPin, onPinClick)}
-      htmlElementVisibilityModifier={(el, isVisible) => {
-        (el as HTMLElement).style.opacity = isVisible ? "1" : "0";
-        (el as HTMLElement).style.pointerEvents = isVisible ? "auto" : "none";
-      }}
-    />
+    <APIProvider apiKey={API_KEY}>
+      <Map
+        mapId={MAP_ID}
+        defaultCenter={DEFAULT_CENTER}
+        defaultZoom={DEFAULT_ZOOM}
+        gestureHandling="greedy"
+        clickableIcons={false}
+        mapTypeControl={false}
+        streetViewControl={false}
+        fullscreenControl={false}
+        zoomControl
+        onClick={() => onPinClick(null)}
+        className="h-full w-full"
+      >
+        <PinFitter pins={pins} />
+        {onBoundsChange && <BoundsReporter onBoundsChange={onBoundsChange} />}
+        {pins.map((pin) => (
+          <AdvancedMarker
+            key={pin.id}
+            position={{ lat: pin.lat, lng: pin.lng }}
+            title={pin.name + (pin.city ? `, ${pin.city}` : "")}
+            onClick={() => onPinClick(pin)}
+            zIndex={pin.stars}
+          >
+            <StarPin tier={pin.stars} />
+          </AdvancedMarker>
+        ))}
+      </Map>
+    </APIProvider>
   );
 }
 
 /*
- * Build a DOM rosette pin. Returned to react-globe.gl which positions
- * it via CSS transforms each frame. Self-contained — no React, no class
- * hooks (the globe lib mounts/unmounts these outside the React tree).
+ * Forward the current viewport bounds upward whenever the camera
+ * settles. We listen to the "idle" event rather than firing during
+ * the pan/zoom gesture so the consumer doesn't refilter on every
+ * frame — once-per-settle is enough for the list-by-viewport feature.
  */
-function makeRosetteEl(
-  pin: RestaurantPin,
-  onClick: (p: RestaurantPin) => void,
-): HTMLElement {
-  const tier = pin.stars as 1 | 2 | 3;
-  const size = tier === 3 ? 22 : tier === 2 ? 18 : 14;
+function BoundsReporter({
+  onBoundsChange,
+}: {
+  onBoundsChange: (b: LatLngBoundsLiteral) => void;
+}) {
+  const map = useMap();
 
-  const wrapper = document.createElement("div");
-  wrapper.style.cssText = `
-    width: ${size}px;
-    height: ${size}px;
-    margin-left: ${-size / 2}px;
-    margin-top: ${-size / 2}px;
-    cursor: pointer;
-    transition: transform 120ms cubic-bezier(0.32, 0.72, 0, 1),
-                filter 120ms cubic-bezier(0.32, 0.72, 0, 1);
-    transform-origin: center;
-    pointer-events: auto;
-  `;
-  wrapper.title = pin.name + (pin.city ? `, ${pin.city}` : "");
-  wrapper.innerHTML = svgForTier(tier);
+  useEffect(() => {
+    if (!map) return;
+    const emit = () => {
+      const b = map.getBounds();
+      if (b) onBoundsChange(b.toJSON());
+    };
+    const listener = map.addListener("idle", emit);
+    // Emit once on mount in case the camera is already at rest.
+    emit();
+    return () => listener.remove();
+  }, [map, onBoundsChange]);
 
-  // Pure-CSS hover: scale + ink-bloom drop shadow
-  const baseFilter = "none";
-  const hoverFilter =
-    tier === 3
-      ? `drop-shadow(0 0 6px ${COLORS.michelinRed}66)`
-      : `drop-shadow(0 0 5px ${COLORS.oakGall}55)`;
-  wrapper.addEventListener("pointerenter", () => {
-    wrapper.style.transform = "scale(1.4)";
-    wrapper.style.filter = hoverFilter;
-  });
-  wrapper.addEventListener("pointerleave", () => {
-    wrapper.style.transform = "scale(1)";
-    wrapper.style.filter = baseFilter;
-  });
-  wrapper.addEventListener("click", (e) => {
-    e.stopPropagation();
-    onClick(pin);
-  });
-
-  return wrapper;
+  return null;
 }
 
-function svgForTier(tier: 1 | 2 | 3): string {
-  if (tier === 3) {
-    return `<svg viewBox="0 0 24 24" width="100%" height="100%" aria-hidden="true">
-      <circle cx="12" cy="12" r="9" fill="${COLORS.michelinRed}" />
-      <circle cx="12" cy="12" r="5.5" fill="none" stroke="${COLORS.goldLeaf}" stroke-width="0.75" opacity="0.6" />
-    </svg>`;
-  }
-  if (tier === 2) {
-    return `<svg viewBox="0 0 24 24" width="100%" height="100%" aria-hidden="true">
-      <circle cx="12" cy="12" r="3.5" fill="${COLORS.oakGall}" />
-      <circle cx="12" cy="12" r="6" fill="none" stroke="${COLORS.oakGall}" stroke-width="0.75" />
-      <circle cx="12" cy="12" r="9" fill="none" stroke="${COLORS.oakGall}" stroke-width="0.75" />
-    </svg>`;
-  }
-  return `<svg viewBox="0 0 24 24" width="100%" height="100%" aria-hidden="true">
-    <circle cx="12" cy="12" r="3.5" fill="${COLORS.oakGall}" />
-    <circle cx="12" cy="12" r="7" fill="none" stroke="${COLORS.oakGall}" stroke-width="0.75" />
-  </svg>`;
+/*
+ * Re-frame the map to fit the current pin set whenever it changes.
+ * Skips the run on the very first mount so the user lands on the
+ * default France view instead of an immediate jump.
+ */
+function PinFitter({ pins }: { pins: RestaurantPin[] }) {
+  const map = useMap();
+  const isFirstRun = useRef(true);
+
+  useEffect(() => {
+    if (!map) return;
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      return;
+    }
+    if (pins.length === 0) return;
+    const bounds = new google.maps.LatLngBounds();
+    pins.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
+    map.fitBounds(bounds, 64);
+  }, [map, pins]);
+
+  return null;
+}
+
+/*
+ * Map pin glyph — sitewide rule: 1★ = 1 red dot, 2★ = 2, 3★ = 3.
+ * Each dot has a thin white halo so it reads on any basemap color, and
+ * the cluster gets a soft drop shadow. Width scales with tier (1 dot
+ * = 14px, 3 dots = ~42px) so the count itself signals tier at glance.
+ */
+function StarPin({ tier }: { tier: 1 | 2 | 3 }) {
+  const dot = 12;
+  const gap = 3;
+  const width = tier * dot + (tier - 1) * gap;
+  return (
+    <span
+      className="inline-flex cursor-pointer items-center drop-shadow-[0_1px_2px_rgba(31,26,18,0.5)] transition-transform duration-[120ms] ease-paper hover:scale-[1.18]"
+      style={{ gap, width, height: dot }}
+    >
+      {Array.from({ length: tier }).map((_, i) => (
+        <span
+          key={i}
+          className="rounded-full bg-michelin-red"
+          style={{
+            width: dot,
+            height: dot,
+            boxShadow: "0 0 0 1.5px #ffffff",
+          }}
+        />
+      ))}
+    </span>
+  );
+}
+
+function SetupNotice() {
+  return (
+    <div className="flex h-full w-full items-center justify-center bg-ermine p-8">
+      <div className="max-w-md text-center">
+        <p className="font-sans text-[11px] uppercase tracking-[0.18em] text-sepia">
+          Map setup needed
+        </p>
+        <h3 className="mt-3 font-display text-2xl italic text-oak-gall">
+          Add a Google Maps API key.
+        </h3>
+        <p className="mt-4 font-serif text-sm leading-relaxed text-oak-gall-soft">
+          Set <code className="font-mono text-xs">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> in{" "}
+          <code className="font-mono text-xs">.env.local</code>, then restart the dev server.
+        </p>
+      </div>
+    </div>
+  );
 }
