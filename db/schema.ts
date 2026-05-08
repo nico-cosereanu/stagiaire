@@ -97,7 +97,13 @@ export const identityVerificationStatusEnum = pgEnum("identity_verification_stat
  * Shared types for jsonb payloads
  * ────────────────────────────────────────────────────────────────────────*/
 
-export type OpenWindow = {
+/*
+ * Date ranges where the kitchen is NOT accepting stage requests. The
+ * default state (null / empty array) means the kitchen is always open.
+ * Restaurants explicitly publish closures — vacations, refurb periods,
+ * private-event runs — and stagiaires can't pick dates inside them.
+ */
+export type ClosedWindow = {
   startDate: string; // ISO date
   endDate: string; // ISO date
   note?: string;
@@ -191,12 +197,14 @@ export const restaurantProfiles = pgTable(
     longDescription: text("long_description"),
     websiteUrl: text("website_url"),
     instagramHandle: text("instagram_handle"),
+    heroImageUrl: text("hero_image_url"),
     photos: text("photos").array(),
+    headChef: text("head_chef"),
     menuUrl: text("menu_url"),
     claimedByUserId: uuid("claimed_by_user_id").references(() => users.id, {
       onDelete: "set null",
     }),
-    openWindows: jsonb("open_windows").$type<OpenWindow[]>(),
+    closedWindows: jsonb("closed_windows").$type<ClosedWindow[]>(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },

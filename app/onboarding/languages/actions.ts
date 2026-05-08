@@ -40,5 +40,6 @@ export async function setLanguages(_prev: Result | null, formData: FormData): Pr
     .set({ languages: list, updatedAt: new Date() })
     .where(eq(stagiaireProfiles.userId, user.id));
 
-  redirect(nextStepHref("languages"));
+  const edit = formData.get("edit") === "1";
+  redirect(edit ? "/app" : nextStepHref("languages"));
 }

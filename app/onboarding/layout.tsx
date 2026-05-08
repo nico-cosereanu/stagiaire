@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 import { requireUser } from "@/lib/auth";
-import { logoutAction } from "@/lib/auth-actions";
 
+import { HeaderAction } from "./_components/header-action";
 import { OnboardingProgress } from "./_components/onboarding-progress";
 
 /*
@@ -25,14 +25,7 @@ export default async function OnboardingLayout({ children }: { children: React.R
           >
             Stagiaire
           </Link>
-          <form action={logoutAction}>
-            <button
-              type="submit"
-              className="font-sans text-[11px] uppercase tracking-[0.18em] text-sepia transition-colors duration-[120ms] ease-paper hover:text-oak-gall"
-            >
-              Save &amp; exit
-            </button>
-          </form>
+          <HeaderAction />
         </div>
       </header>
 

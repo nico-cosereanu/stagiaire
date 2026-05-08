@@ -27,5 +27,6 @@ export async function setBio(_prev: Result | null, formData: FormData): Promise<
     .set({ bio: parsed.data.bio, updatedAt: new Date() })
     .where(eq(stagiaireProfiles.userId, user.id));
 
-  redirect(nextStepHref("bio"));
+  const edit = formData.get("edit") === "1";
+  redirect(edit ? "/app" : nextStepHref("bio"));
 }

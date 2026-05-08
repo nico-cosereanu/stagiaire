@@ -23,7 +23,10 @@ export async function startVerification(): Promise<void> {
   const session = await stripe.identity.verificationSessions.create({
     type: "document",
     metadata: { user_id: user.id },
-    return_url: `${getAppOrigin()}/onboarding/verify/return?session_id={VERIFICATION_SESSION_ID}`,
+    // No session_id in the URL: Stripe Identity doesn't expand
+    // {VERIFICATION_SESSION_ID} placeholders. The return page reads the id
+    // from stagiaire_profiles.stripeVerificationSessionId instead.
+    return_url: `${getAppOrigin()}/onboarding/verify/return`,
     options: {
       document: {
         require_matching_selfie: true,

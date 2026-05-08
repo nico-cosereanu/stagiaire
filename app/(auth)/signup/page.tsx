@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Sign up · Stagiaire",
+  title: "Sign up",
 };
 
 /*
@@ -70,7 +70,7 @@ function RoleTile({
   return (
     <Link
       href={href}
-      className="group block bg-vellum p-8 transition-colors duration-[120ms] ease-paper hover:bg-ermine"
+      className="group block rounded-xl bg-white p-8 transition-colors duration-[120ms] ease-paper hover:bg-vellum"
     >
       <p className="font-sans text-[11px] uppercase tracking-[0.18em] text-sepia">{eyebrow}</p>
       <h2 className="mt-3 font-display text-3xl italic text-oak-gall">{title}</h2>

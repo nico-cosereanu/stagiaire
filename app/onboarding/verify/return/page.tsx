@@ -15,6 +15,10 @@ import { StepShell } from "../../_components/step-shell";
  * synchronously here so the user sees the right thing immediately
  * (webhook may not have fired yet, especially in dev).
  *
+ * We look the session id up from the profile rather than the URL — Stripe
+ * Identity (unlike Checkout) doesn't substitute {VERIFICATION_SESSION_ID}
+ * placeholders in return_url, and we already persisted the id at creation.
+ *
  * Stripe session.status values:
  *   - requires_input -> user canceled or document was rejected -> failed
  *   - processing     -> manual review or just submitted -> pending
@@ -28,31 +32,40 @@ function mapStripeStatus(s: string): "verified" | "pending" | "failed" {
   return "failed";
 }
 
-export default async function OnboardingVerifyReturnPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ session_id?: string }>;
-}) {
+export default async function OnboardingVerifyReturnPage() {
   const user = await requireUser();
-  const { session_id } = await searchParams;
 
-  if (!session_id) {
+  const profile = await db.query.stagiaireProfiles.findFirst({
+    where: eq(stagiaireProfiles.userId, user.id),
+    columns: { stripeVerificationSessionId: true },
+  });
+
+  if (!profile?.stripeVerificationSessionId) {
     redirect("/onboarding/verify");
   }
 
-  const session = await stripe.identity.verificationSessions.retrieve(session_id);
+  const session = await stripe.identity.verificationSessions.retrieve(
+    profile.stripeVerificationSessionId,
+  );
 
-  // Defense in depth: confirm this session belongs to the current user.
+  // Defense in depth: confirm Stripe didn't return someone else's session.
   if (session.metadata?.user_id !== user.id) {
     redirect("/onboarding/verify");
   }
 
   const newStatus = mapStripeStatus(session.status);
 
-  // Reconcile in case the webhook hasn't fired yet.
+  // Reconcile in case the webhook hasn't fired yet. Mirror the webhook's
+  // behaviour: stamp idVerifiedAt the same moment we flip to verified, so
+  // surfaces that key off `idVerifiedAt !== null` (the verified badge,
+  // public profile dot) update without waiting on the webhook.
   await db
     .update(stagiaireProfiles)
-    .set({ identityVerificationStatus: newStatus, updatedAt: new Date() })
+    .set({
+      identityVerificationStatus: newStatus,
+      ...(newStatus === "verified" ? { idVerifiedAt: new Date() } : {}),
+      updatedAt: new Date(),
+    })
     .where(eq(stagiaireProfiles.userId, user.id));
 
   if (newStatus === "verified") {
@@ -69,7 +82,7 @@ export default async function OnboardingVerifyReturnPage({
       >
         <Link
           href="/onboarding/done"
-          className="inline-flex h-12 items-center justify-center bg-cordon-bleu px-8 font-sans text-[13px] font-medium uppercase tracking-[0.04em] text-vellum transition-colors duration-[120ms] ease-paper hover:bg-cordon-bleu-dark"
+          className="inline-flex h-12 items-center justify-center rounded-lg bg-cordon-bleu px-8 font-sans text-[13px] font-medium uppercase tracking-[0.04em] text-vellum transition-colors duration-[120ms] ease-paper hover:bg-cordon-bleu-dark"
         >
           Continue →
         </Link>
@@ -86,7 +99,7 @@ export default async function OnboardingVerifyReturnPage({
     >
       <Link
         href="/onboarding/verify"
-        className="inline-flex h-12 items-center justify-center bg-cordon-bleu px-8 font-sans text-[13px] font-medium uppercase tracking-[0.04em] text-vellum transition-colors duration-[120ms] ease-paper hover:bg-cordon-bleu-dark"
+        className="inline-flex h-12 items-center justify-center rounded-lg bg-cordon-bleu px-8 font-sans text-[13px] font-medium uppercase tracking-[0.04em] text-vellum transition-colors duration-[120ms] ease-paper hover:bg-cordon-bleu-dark"
       >
         Try again →
       </Link>

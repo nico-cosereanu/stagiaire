@@ -60,3 +60,14 @@ export async function requireRole(
   if (user.role !== role) redirect("/");
   return user;
 }
+
+/*
+ * Per-role "home" surface used by nav links across the public chrome.
+ * Stagiaires get their profile, restaurants their kitchen dashboard,
+ * admins the moderation surface.
+ */
+export function roleHome(role: CurrentUser["role"]): { href: string; label: string } {
+  if (role === "restaurant_owner") return { href: "/restaurant", label: "Restaurant profile" };
+  if (role === "admin") return { href: "/admin", label: "Admin" };
+  return { href: "/app", label: "My profile" };
+}

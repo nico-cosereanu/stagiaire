@@ -54,5 +54,6 @@ export async function setAvailability(
     })
     .where(eq(stagiaireProfiles.userId, user.id));
 
-  redirect(nextStepHref("availability"));
+  const edit = formData.get("edit") === "1";
+  redirect(edit ? "/app" : nextStepHref("availability"));
 }

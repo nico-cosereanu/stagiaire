@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { logoutAction } from "@/lib/auth-actions";
 import { requireUser } from "@/lib/auth";
+import { PostHogIdentify } from "@/components/analytics/posthog-identify";
 import {
   firstIncompleteStepHref,
   getProfile,
@@ -42,13 +43,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               href="/app"
               className="font-sans text-[11px] uppercase tracking-[0.18em] text-sepia transition-colors duration-[120ms] ease-paper hover:text-oak-gall"
             >
-              Dashboard
+              My profile
             </Link>
             <Link
-              href="/map"
+              href="/discover"
               className="font-sans text-[11px] uppercase tracking-[0.18em] text-sepia transition-colors duration-[120ms] ease-paper hover:text-oak-gall"
             >
-              Map
+              Discover
             </Link>
           </div>
 
@@ -68,6 +69,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       </header>
       <main>{children}</main>
+      <PostHogIdentify userId={user.id} email={user.email} role={user.role} />
     </div>
   );
 }

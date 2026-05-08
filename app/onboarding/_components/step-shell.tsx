@@ -12,15 +12,20 @@ export function StepShell({
   eyebrow,
   title,
   subtitle,
+  isEdit = false,
   children,
 }: {
   slug: OnboardingStepSlug;
   eyebrow?: string;
   title: string;
   subtitle?: string;
+  isEdit?: boolean;
   children: React.ReactNode;
 }) {
-  const back = prevStepHref(slug);
+  // In edit mode the user came from /app to tweak one field; "Back"
+  // should return them there, not walk back through the wizard.
+  const back = isEdit ? "/app" : prevStepHref(slug);
+  const backLabel = isEdit ? "← Back to profile" : "← Back";
 
   return (
     <div>
@@ -42,7 +47,7 @@ export function StepShell({
             href={back}
             className="font-sans text-[11px] uppercase tracking-[0.18em] text-sepia transition-colors duration-[120ms] ease-paper hover:text-oak-gall"
           >
-            ← Back
+            {backLabel}
           </Link>
         </p>
       )}

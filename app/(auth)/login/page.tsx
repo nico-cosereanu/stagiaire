@@ -4,7 +4,7 @@ import Link from "next/link";
 import { LoginForm } from "./_components/login-form";
 
 export const metadata: Metadata = {
-  title: "Log in · Stagiaire",
+  title: "Log in",
 };
 
 type PageProps = {

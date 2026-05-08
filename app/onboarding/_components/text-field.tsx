@@ -39,7 +39,7 @@ export function TextField({
         autoFocus={autoFocus}
         autoComplete={autoComplete}
         placeholder={placeholder}
-        className={`w-full border bg-ermine px-4 py-3 font-serif text-base text-oak-gall placeholder:text-sepia-faint focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cordon-bleu ${
+        className={`w-full rounded-xl border bg-white px-4 py-3 font-serif text-base text-oak-gall shadow-[0_1px_2px_rgba(43,38,26,0.04)] transition-shadow duration-[120ms] ease-paper placeholder:text-sepia-faint hover:shadow-[0_2px_10px_-4px_rgba(43,38,26,0.12)] focus:shadow-[0_2px_10px_-4px_rgba(43,38,26,0.12)] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cordon-bleu ${
           invalid ? "border-michelin-red/60" : "border-sepia/40"
         }`}
       />
@@ -78,7 +78,7 @@ export function TextArea({
         required={required}
         placeholder={placeholder}
         rows={rows}
-        className={`w-full resize-none border bg-ermine px-4 py-3 font-serif text-base leading-relaxed text-oak-gall placeholder:text-sepia-faint focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cordon-bleu ${
+        className={`w-full resize-none rounded-xl border bg-white px-4 py-3 font-serif text-base leading-relaxed text-oak-gall shadow-[0_1px_2px_rgba(43,38,26,0.04)] transition-shadow duration-[120ms] ease-paper placeholder:text-sepia-faint hover:shadow-[0_2px_10px_-4px_rgba(43,38,26,0.12)] focus:shadow-[0_2px_10px_-4px_rgba(43,38,26,0.12)] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cordon-bleu ${
           invalid ? "border-michelin-red/60" : "border-sepia/40"
         }`}
       />
@@ -92,7 +92,7 @@ export function ContinueButton({ pending, label = "Continue" }: { pending: boole
     <button
       type="submit"
       disabled={pending}
-      className="inline-flex h-12 items-center justify-center bg-cordon-bleu px-8 font-sans text-[13px] font-medium uppercase tracking-[0.04em] text-vellum transition-colors duration-[120ms] ease-paper hover:bg-cordon-bleu-dark focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cordon-bleu disabled:cursor-not-allowed disabled:bg-sepia-faint"
+      className="inline-flex h-12 items-center justify-center rounded-lg bg-cordon-bleu px-8 font-sans text-[13px] font-medium uppercase tracking-[0.04em] text-vellum transition-colors duration-[120ms] ease-paper hover:bg-cordon-bleu-dark focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cordon-bleu disabled:cursor-not-allowed disabled:bg-sepia-faint"
     >
       {pending ? "Saving…" : `${label} →`}
     </button>

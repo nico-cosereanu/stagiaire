@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 import { ONBOARDING_STEPS } from "../_lib/steps";
 
@@ -9,15 +9,20 @@ import { ONBOARDING_STEPS } from "../_lib/steps";
  * spelled out alongside ("Step 2 of 5 · Where you cook"). Reads the
  * pathname client-side so the layout doesn't have to thread the step
  * through props.
+ *
+ * Suppressed in edit mode (?edit=1): the user is editing one field
+ * from /app, not walking the wizard, so a step counter is misleading.
  */
 
 export function OnboardingProgress() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const slug = pathname.split("/")[2] ?? "";
   const currentIdx = ONBOARDING_STEPS.findIndex((s) => s.slug === slug);
 
-  // Don't render on /onboarding/done — wizard is over by then
+  // Don't render on /onboarding/done, on edit visits, or off-route
   if (slug === "done" || currentIdx === -1) return null;
+  if (searchParams.get("edit") === "1") return null;
 
   const total = ONBOARDING_STEPS.length;
 

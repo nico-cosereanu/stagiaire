@@ -160,7 +160,7 @@ async function main() {
       photos: null,
       menuUrl: null,
       claimedByUserId: null,
-      openWindows: null,
+      closedWindows: null,
     });
   }
 

@@ -8,9 +8,11 @@ import { setAvailability, type Result } from "../actions";
 export function AvailabilityForm({
   defaultFrom,
   defaultUntil,
+  isEdit = false,
 }: {
   defaultFrom: string;
   defaultUntil: string;
+  isEdit?: boolean;
 }) {
   const [state, formAction, isPending] = useActionState<Result | null, FormData>(
     setAvailability,
@@ -19,6 +21,7 @@ export function AvailabilityForm({
 
   return (
     <form action={formAction} className="space-y-6">
+      {isEdit && <input type="hidden" name="edit" value="1" />}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <TextField
           label="From"
@@ -38,9 +41,9 @@ export function AvailabilityForm({
       </div>
       {state?.ok === false && <FormError message={state.error} />}
       <p className="font-sans text-[11px] uppercase tracking-[0.18em] text-sepia-faint">
-        Both optional — leave blank if you'd rather not commit yet.
+        Both optional — leave blank if you&apos;d rather not commit yet.
       </p>
-      <ContinueButton pending={isPending} />
+      <ContinueButton pending={isPending} label={isEdit ? "Save" : "Continue"} />
     </form>
   );
 }

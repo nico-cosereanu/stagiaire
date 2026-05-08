@@ -1,8 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 
+import { db } from "@/lib/db";
+import { users } from "@/db/schema";
 import { createClient } from "@/lib/supabase/server";
 
 const loginSchema = z.object({
@@ -29,15 +32,27 @@ export async function loginAction(_prev: LoginResult | null, formData: FormData)
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) {
     return { ok: false, error: error.message };
   }
 
-  // Honor ?next=<path> if it's a safe in-app path.
+  // Honor ?next=<path> if it's a safe in-app path; otherwise pick the
+  // role-appropriate default destination.
   const rawNext = formData.get("next");
   const next = typeof rawNext === "string" && rawNext.startsWith("/") && !rawNext.startsWith("//")
     ? rawNext
-    : "/app";
-  redirect(next);
+    : null;
+  if (next) redirect(next);
+
+  const userId = data.user?.id;
+  if (!userId) redirect("/app");
+
+  const profile = await db.query.users.findFirst({
+    where: eq(users.id, userId),
+    columns: { role: true },
+  });
+  if (profile?.role === "restaurant_owner") redirect("/restaurant");
+  if (profile?.role === "admin") redirect("/admin");
+  redirect("/app");
 }

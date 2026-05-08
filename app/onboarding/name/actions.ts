@@ -46,5 +46,6 @@ export async function setName(_prev: Result | null, formData: FormData): Promise
       set: { name: parsed.data.name, updatedAt: new Date() },
     });
 
-  redirect(nextStepHref("name"));
+  const edit = formData.get("edit") === "1";
+  redirect(edit ? "/app" : nextStepHref("name"));
 }

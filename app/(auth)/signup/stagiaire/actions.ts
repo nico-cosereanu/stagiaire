@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { createClient } from "@/lib/supabase/server";
+import { capture } from "@/lib/analytics/server";
 
 /*
  * Stagiaire signup. Creates the auth.users row via supabase.auth.signUp;
@@ -60,6 +61,14 @@ export async function signupAction(
   });
   if (error) {
     return { ok: false, error: error.message };
+  }
+
+  if (data.user) {
+    await capture({
+      distinctId: data.user.id,
+      event: "signup_completed",
+      properties: { role: "stagiaire", emailConfirmationRequired: !data.session },
+    });
   }
 
   // If session is null, Supabase requires email confirmation — surface the

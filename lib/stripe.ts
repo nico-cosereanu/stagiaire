@@ -24,12 +24,4 @@ export const stripe = new Proxy({} as Stripe, {
   },
 });
 
-/*
- * Public origin for return_url callbacks. Vercel sets VERCEL_URL on
- * deployments; locally we fall back to NEXT_PUBLIC_APP_URL or http://localhost:3000.
- */
-export function getAppOrigin(): string {
-  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return "http://localhost:3000";
-}
+export { getAppOrigin } from "./site-url";

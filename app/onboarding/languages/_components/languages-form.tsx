@@ -5,7 +5,13 @@ import { useActionState } from "react";
 import { ContinueButton, FormError, TextField } from "../../_components/text-field";
 import { setLanguages, type Result } from "../actions";
 
-export function LanguagesForm({ defaultLanguages }: { defaultLanguages: string }) {
+export function LanguagesForm({
+  defaultLanguages,
+  isEdit = false,
+}: {
+  defaultLanguages: string;
+  isEdit?: boolean;
+}) {
   const [state, formAction, isPending] = useActionState<Result | null, FormData>(
     setLanguages,
     null,
@@ -13,6 +19,7 @@ export function LanguagesForm({ defaultLanguages }: { defaultLanguages: string }
 
   return (
     <form action={formAction} className="space-y-6">
+      {isEdit && <input type="hidden" name="edit" value="1" />}
       <TextField
         label="Languages"
         name="languages"
@@ -24,7 +31,7 @@ export function LanguagesForm({ defaultLanguages }: { defaultLanguages: string }
         invalid={state?.ok === false}
       />
       {state?.ok === false && <FormError message={state.error} />}
-      <ContinueButton pending={isPending} />
+      <ContinueButton pending={isPending} label={isEdit ? "Save" : "Continue"} />
     </form>
   );
 }

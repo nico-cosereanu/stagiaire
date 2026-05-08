@@ -35,5 +35,6 @@ export async function setLocation(_prev: Result | null, formData: FormData): Pro
     })
     .where(eq(stagiaireProfiles.userId, user.id));
 
-  redirect(nextStepHref("location"));
+  const edit = formData.get("edit") === "1";
+  redirect(edit ? "/app" : nextStepHref("location"));
 }

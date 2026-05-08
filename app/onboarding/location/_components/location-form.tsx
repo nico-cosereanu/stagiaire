@@ -8,9 +8,11 @@ import { setLocation, type Result } from "../actions";
 export function LocationForm({
   defaultCity,
   defaultCountry,
+  isEdit = false,
 }: {
   defaultCity: string;
   defaultCountry: string;
+  isEdit?: boolean;
 }) {
   const [state, formAction, isPending] = useActionState<Result | null, FormData>(
     setLocation,
@@ -19,6 +21,7 @@ export function LocationForm({
 
   return (
     <form action={formAction} className="space-y-6">
+      {isEdit && <input type="hidden" name="edit" value="1" />}
       <TextField
         label="City"
         name="city"
@@ -37,7 +40,7 @@ export function LocationForm({
         invalid={state?.ok === false}
       />
       {state?.ok === false && <FormError message={state.error} />}
-      <ContinueButton pending={isPending} />
+      <ContinueButton pending={isPending} label={isEdit ? "Save" : "Continue"} />
     </form>
   );
 }

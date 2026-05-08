@@ -4,7 +4,7 @@ import Link from "next/link";
 import { SignupForm } from "./_components/signup-form";
 
 export const metadata: Metadata = {
-  title: "Sign up · Stagiaire",
+  title: "Sign up",
 };
 
 export default function SignupPage() {
@@ -19,7 +19,7 @@ export default function SignupPage() {
       <p className="mt-6 max-w-prose font-serif text-base leading-relaxed text-oak-gall-soft">
         Create a stagiaire account to request stages at any of the {""}
         <Link
-          href="/map"
+          href="/discover"
           className="text-cordon-bleu underline decoration-cordon-bleu decoration-1 underline-offset-[3px]"
         >
           658 starred kitchens

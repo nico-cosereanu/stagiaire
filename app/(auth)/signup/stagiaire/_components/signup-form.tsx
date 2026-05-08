@@ -90,7 +90,7 @@ export function SignupForm() {
       <button
         type="submit"
         disabled={isPending}
-        className="w-full bg-cordon-bleu px-6 py-3.5 font-sans text-[13px] font-medium uppercase tracking-[0.04em] text-vellum transition-colors duration-[120ms] ease-paper hover:bg-cordon-bleu-dark focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cordon-bleu disabled:cursor-not-allowed disabled:bg-sepia-faint"
+        className="w-full rounded-lg bg-cordon-bleu px-6 py-3.5 font-sans text-[13px] font-medium uppercase tracking-[0.04em] text-vellum transition-colors duration-[120ms] ease-paper hover:bg-cordon-bleu-dark focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cordon-bleu disabled:cursor-not-allowed disabled:bg-sepia-faint"
       >
         {isPending ? "Creating account…" : "Create account"}
       </button>
