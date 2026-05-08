@@ -109,7 +109,7 @@ Public, indexable, opens from the card or direct URL.
 - Photo gallery
 - Menu (uploaded PDF or photo or rich text)
 - **Team section** — head chef, sous chef, pastry chef, etc., with names and roles. Source: restaurants fill in their own team at claim time (locked). No scraping or crowdsourcing in v1; team data will be sparse until restaurants engage.
-- Open windows (visible if restaurant has set them)
+- Closures (visible if restaurant has published any — block stagiaire dates)
 - Stagiaire reviews (kitchen-side, structured ratings + free text)
 - "Request stage" CTA — opens calendar (login-walled)
 - Verified badge if claimed
@@ -130,10 +130,10 @@ Public, the stagiaire's portable resume.
 
 ---
 
-## 9. Booking flow — hybrid availability
+## 9. Booking flow — open by default
 
-1. Restaurant publishes "open windows" — date ranges they're accepting stagiaire requests. Optional; restaurants without windows still receive requests.
-2. Stagiaire selects specific dates on the restaurant's calendar. Range: 2 days to 3 months. Dates outside listed windows are flagged but allowed.
+1. Restaurants are open for requests on every date by default. They can publish "closures" — explicit date ranges (vacations, refurbs, private-event runs) — that block stagiaires from picking those dates.
+2. Stagiaire selects specific dates on the restaurant's calendar. Any duration is allowed (a single day up to a multi-month run). Days inside a closure are unselectable; ranges that straddle a closure are rejected at submit.
 3. Stagiaire writes a cover message and submits.
 4. Restaurant receives notification + sees stagiaire profile + cover message.
 5. Pre-acceptance chat opens — either side can message.
@@ -244,7 +244,7 @@ Core entities and key fields. Not exhaustive — the database scaffolder will fi
 `user_id, name, photo_url, bio, current_city, country, languages[], available_from, available_until, id_verified_at, slug`
 
 ### `restaurant_profiles`
-`id, name, slug, address, lat, lng, city, country, stars (1|2|3), cuisine_tags[], blurb, long_description, website_url, instagram_handle, photos[], menu_url, claimed_by_user_id (nullable), open_windows[], created_at`
+`id, name, slug, address, lat, lng, city, country, stars (1|2|3), cuisine_tags[], blurb, long_description, website_url, instagram_handle, photos[], menu_url, claimed_by_user_id (nullable), closed_windows[], created_at`
 
 ### `restaurant_claims`
 `id, restaurant_id, user_id, evidence_text, evidence_url, status (pending | approved | rejected), reviewed_by_admin_id, created_at`
@@ -309,7 +309,7 @@ Core entities and key fields. Not exhaustive — the database scaffolder will fi
 - `/restaurant/requests/[id]` — request detail: stagiaire profile, chat, accept/decline
 - `/restaurant/messages` — threads
 - `/restaurant/profile` — edit restaurant profile, photos, menu, team
-- `/restaurant/availability` — manage open windows
+- `/restaurant/windows` — publish closures (vacations, refurbs); kitchen is open by default
 - `/restaurant/reviews` — reviews of my restaurant + my reviews of past stagiaires
 - `/restaurant/settings`
 
