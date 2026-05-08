@@ -8,17 +8,23 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "db:seed:restaurants": "node --env-file=.env.local --experimental-strip-types db/seed/restaurants.ts"
+    "db:seed:restaurants": "node --env-file=.env.local --experimental-strip-types db/seed/restaurants.ts",
+    "scrape:michelin-images": "node --env-file=.env.local --experimental-strip-types scripts/scrape-michelin-images.ts",
+    "backfill:head-chef": "node --env-file=.env.local --experimental-strip-types scripts/backfill-head-chef.ts"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.51.0",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.105.1",
+    "@vis.gl/react-google-maps": "^1.8.3",
     "drizzle-orm": "^0.45.2",
     "next": "15.5.15",
     "postgres": "^3.4.9",
+    "posthog-js": "^1.372.8",
+    "posthog-node": "^5.33.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "react-globe.gl": "^2.37.1",
+    "resend": "^6.12.2",
     "stripe": "^22.1.0",
     "zod": "^4.4.2"
   },
@@ -28,7 +34,6 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/three": "^0.184.0",
     "csv-parse": "^6.2.1",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
